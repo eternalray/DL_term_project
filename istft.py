@@ -30,7 +30,9 @@ while os.path.isfile(file_name):
 	
 	print(data)
 	break
-	time, wav_data_tmp = istft(data, 44100)
+
+	wav_data_tmp = librosa.istft(data)
+	#time, wav_data_tmp = istft(data, 44100)
 	wav_data = wav_data + wav_data_tmp.tolist()
 	file_name_idx += 5
 	file_name = preblock + str(file_name_idx) + ext
