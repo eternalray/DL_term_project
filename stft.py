@@ -1,13 +1,12 @@
 import os
+import sys
 import pickle
-import argparse
+import timeit
 import librosa
-import librosa.display
+import argparse
 import numpy as np
-from scipy.io import wavfile
-from scipy.signal import stft
-from matplotlib import pyplot as plt
 
+"""
 parser = argparse.ArgumentParser()
 parser.add_argument('filepath', help = 'input path of wav file or directory')
 args = parser.parse_args()
@@ -43,22 +42,70 @@ while end < data.shape[0]:
 
 	with open(spectro_file_path, 'wb') as f:
 
-		print('asdf')
 		pickle.dump(spectro, f)
 
 	#np.savetxt(spectro_file_path, spectro, delimiter=',')
 	file_name_idx += 1
 
-print("stft done")
+print("STFT done")
+"""
 
+def transform(filePath):
+
+	result = list()
+
+	data, rate = librosa.load(filePath, mono = True, sr = 160000)
+	start = width = 5 * rate
+	end = start + width
 	
+	print("stft started for " + filePath)
 
-'''
-plt.pcolormesh(time, freq, spectro)
+	idx = 0
 
-plt.ylabel("Frequency [Hz]")
-plt.xlabel("time [sec]")
-plt.ylim(0,5000)
-#plt.xlim(10,20)
-plt.show()
-'''
+	while end < data.shape[0]:
+
+		window = data[start:end]
+		spectro = librosa.stft(window, n_fft = 2048, hop_length = 512)
+
+		idx += 1
+		start += rate
+		end += rate
+		
+		result.append((idx, spectro))
+
+	print("STFT done")
+
+	return result
+
+def main(inPath, outPath):
+
+	for path, dirs, files in os.walk(inPath):
+
+		for f in files:
+
+			if os.path.splitext(f)[-1] == '.wav':
+
+				spectroList = transform(os.path.join(path, f))
+
+				for spectro in spectroList:
+
+					if not os.path.exists(outPath):
+
+						os.makedirs(outPath)
+
+					outFile = 'spectro_' + str(spectro[0]) + '_' + os.path.splitext(f)[0] + '.pickle'
+
+					with open(os.path.join(outPath, outFile), 'wb') as fs:
+
+						pickle.dump(spectro[1], fs)
+
+if __name__ == '__main__':
+
+	parser = argparse.ArgumentParser()
+	parser.add_argument('inPath', help = 'input path of wav file or directory')
+	parser.add_argument('outPath', help = 'input path of wav file or directory')
+	
+	args = parser.parse_args()
+	
+	main(args.inPath, args.outPath)
+	sys.exit(0)
