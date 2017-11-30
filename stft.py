@@ -50,12 +50,12 @@ while end < data.shape[0]:
 print("STFT done")
 """
 
-def transform(filePath):
+def transform(filePath, timeLength = 5):
 
 	result = list()
 
 	data, rate = librosa.load(filePath, mono = True, sr = 160000)
-	start = width = 5 * rate
+	start = width = timeLength * rate
 	end = start + width
 	
 	print("stft started for " + filePath)
