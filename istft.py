@@ -21,7 +21,13 @@ wav_data = []
 
 print("istft started for " + prefix)
 while os.path.isfile(file_name):
-	data = np.loadtxt(file_name, dtype=np.complex64)
+
+	with open(file_name, 'rb') as f:
+
+		data = pickle.read(f)
+	
+	#data = np.loadtxt(file_name, dtype=np.complex64)
+	
 	print(data)
 	break
 	time, wav_data_tmp = istft(data, 44100)

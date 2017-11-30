@@ -4,6 +4,7 @@ import numpy as np
 from scipy.io import wavfile
 from scipy.signal import stft
 from matplotlib import pyplot as plt
+import pickle
 
 parser = argparse.ArgumentParser()
 parser.add_argument("filepath", help="input path of wav file or directory")
@@ -34,7 +35,12 @@ while end < left.shape[0]:
 
 	start += rate
 	end += rate
-	np.savetxt(spectro_file_path, spectro, delimiter=',')
+
+	with open(spectro_file_path, 'wb') as f:
+
+		pickle.dump(spectro, f)
+
+	#np.savetxt(spectro_file_path, spectro, delimiter=',')
 	file_name_idx += 1
 
 print("stft done")
