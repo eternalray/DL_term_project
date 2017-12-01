@@ -79,31 +79,57 @@ def transform(filePath, timeLength = 5):
 
 def main(inPath, outPath):
 
-	for path, dirs, files in os.walk(inPath):
+	if os.path.isdir(inPath):
 
-		for f in files:
+		for path, dirs, files in os.walk(inPath):
 
-			if os.path.splitext(f)[-1] == '.wav':
+			for f in files:
 
-				spectroList = transform(os.path.join(path, f))
+				if os.path.splitext(f)[-1] == '.wav':
 
-				for spectro in spectroList:
+					spectroList = transform(os.path.join(path, f))
 
-					if not os.path.exists(outPath):
+					for spectro in spectroList:
 
-						os.makedirs(outPath)
+						if not os.path.exists(outPath):
 
-					outFile = 'spectro_' + str(spectro[0]) + '_' + os.path.splitext(f)[0] + '.pickle'
+							os.makedirs(outPath)
 
-					with open(os.path.join(outPath, outFile), 'wb') as fs:
+						outFile = 'spectro_' + str(spectro[0]) + '_' + os.path.splitext(f)[0] + '.pickle'
 
-						pickle.dump(spectro[1], fs)
+						with open(os.path.join(outPath, outFile), 'wb') as fs:
+
+							pickle.dump(spectro[1], fs)	
+
+	elif os.path.isfile(inPath):
+
+		if os.path.splitext(inPath)[-1] == '.wav':
+
+			spectroList = transform(inPath)
+
+			for spectro in spectroList:
+
+				if not os.path.exists(outPath):
+
+					os.makedirs(outPath)
+
+				outFile = 'spectro_' + str(spectro[0]) + '_' + os.path.splitext(inPath)[0] + '.pickle'
+
+				with open(os.path.join(outPath, outFile), 'wb') as fs:
+
+					pickle.dump(spectro[1], fs)
+
+	else:
+
+		raise
+
+	
 
 if __name__ == '__main__':
 
 	parser = argparse.ArgumentParser()
 	parser.add_argument('inPath', help = 'input path of wav file or directory')
-	parser.add_argument('outPath', help = 'input path of wav file or directory')
+	parser.add_argument('outPath', help = 'output path of wav file or directory')
 	
 	args = parser.parse_args()
 	
