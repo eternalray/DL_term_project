@@ -6,106 +6,179 @@ import librosa
 import argparse
 import numpy as np
 
-"""
-parser = argparse.ArgumentParser()
-parser.add_argument('filepath', help = 'input path of wav file or directory')
-args = parser.parse_args()
+def divideList(target, size):
 
-file_name = args.filepath
-data, rate = librosa.load(file_name, mono = True)
+	# divide given target list into sub list
+	# size of sub lists is 'size'
+	return [target[idx:idx + size] for idx in range(0, len(target), size)]
 
-width = 5 * rate
-start = width
-end = start + width
-directory_path = os.path.dirname(file_name)
-prefix = "spectro_" + os.path.basename(file_name)[:-4]
-
-file_name_idx = 1
-
-if not os.path.exists(directory_path + prefix):
-
-	os.makedirs(directory_path + prefix)
-
-print("stft started for " + file_name)
-
-print(end, data.shape[0])
-while end < data.shape[0]:
-
-	spectro_file_path = os.path.join(directory_path + prefix, prefix + '_' + str(file_name_idx) + '.pickle')
-	#spectro_file_path = directory_path + prefix + "/" + prefix + "_" + str(file_name_idx) + ".csv"
-	window = data[start:end]
-	#freq, time, spectro = stft(window, rate)
-	spectro = librosa.stft(window, n_fft = 2048, hop_length = 512)
-
-	start += rate
-	end += rate
-
-	with open(spectro_file_path, 'wb') as f:
-
-		pickle.dump(spectro, f)
-
-	#np.savetxt(spectro_file_path, spectro, delimiter=',')
-	file_name_idx += 1
-
-print("STFT done")
-"""
-
-def transform(filePath, timeLength = 5):
+def transformExtract(filePath, timeLength = 5, size = 100):
 
 	result = list()
 
-	data, rate = librosa.load(filePath, mono = True, sr = 160000)
-	start = width = timeLength * rate
-	end = start + width
+	# load audio
+	audio, rate = librosa.load(filePath, mono = True, sr = 160000)
 	
-	print("stft started for " + filePath)
+	# remove each 10% of foremost, hindmost from audio
+	# size of window is (sampling rate) * (time in second)
+	start = int(audio.shape[0] * 0.1)
+	end = int(audio.shape[0] * 0.9)
+	windowSize = timeLength * rate
 
-	idx = 0
+	# assertion
+	assert end > start + windowSize and audio.shape[0] > end + windowSize, 'Audio is too short!'
 
-	while end < data.shape[0]:
+	# select random point of audio
+	selected = numpy.random.randint(start, end, size = size)
 
-		window = data[start:end]
+	# STFT for selected and divided audio
+	for idx in selected:
+
+		window = audio[idx : idx + windowSize]
 		spectro = librosa.stft(window, n_fft = 2048, hop_length = 512)
 
-		idx += 1
-		start += rate
-		end += rate
+		result.append(spectro)
+
+	# return STFT to train, val, test set
+	return result[: int(size * 0.6)], result[int(size * 0.6) : int(size * 0.8)], result[int(size * 0.8):]
+
+def transformAll(filePath, timeLength = 5):
+
+	result = list()
+
+	# load audio
+	audio, rate = librosa.load(filePath, mono = True, sr = 160000)
+	
+	# remove each 10% of foremost, hindmost from audio
+	# size of window is (sampling rate) * (time in second)
+	start = int(audio.shape[0] * 0.1)
+	end = int(audio.shape[0] * 0.9)
+	windowSize = timeLength * rate
+
+	# use 80% of audio
+	selected = audio[start : end]
+
+	# STFT for divided audio
+	for window in divideList(selected, windowSize):
+
+		spectro = librosa.stft(window, n_fft = 2048, hop_length = 512)
+
+		result.append(spectro)
 		
-		result.append((idx, spectro))
-
-	print("STFT done")
-
 	return result
 
-def main(inPath, outPath):
+"""
+def itransform(filePath):
 
-	for path, dirs, files in os.walk(inPath):
+	with open(file_name, 'rb') as f:
 
-		for f in files:
+		data = pickle.read(f)
 
-			if os.path.splitext(f)[-1] == '.wav':
+	audio = librosa.istft(data)
 
-				spectroList = transform(os.path.join(path, f))
+	return audio
 
-				for spectro in spectroList:
+def saveAudio(filePath):
+"""
 
-					if not os.path.exists(outPath):
+def main(inPath, outPath, mode = 'continuous'):
 
-						os.makedirs(outPath)
+	if mode == 'continuous':
 
-					outFile = 'spectro_' + str(spectro[0]) + '_' + os.path.splitext(f)[0] + '.pickle'
+		if not os.path.exists(outPath):
 
-					with open(os.path.join(outPath, outFile), 'wb') as fs:
+			os.makedirs(outPath)
 
-						pickle.dump(spectro[1], fs)
+		for path, dirs, files in os.walk(inPath):
+
+			for f in files:
+
+				if os.path.splitext(f)[-1] == '.wav':
+
+					try:
+
+						spectroList = transformAll(os.path.join(path, f))
+
+						for spectro in spectroList:
+
+							outFile = 'spectro_' + str(spectro[0]) + '_' + os.path.splitext(f)[0] + '.pickle'
+
+							with open(os.path.join(outPath, outFile), 'wb') as fs:
+
+								pickle.dump(spectro[1], fs)
+
+					except:
+
+						continue
+
+	elif mode == 'extraction':
+
+		if not os.path.exists(outPath):
+
+			os.makedirs(outPath)
+
+		if not os.path.exists(os.path.join(outPath, 'train')):
+
+			os.makedirs(os.path.join(outPath, 'train'))
+
+		if not os.path.exists(os.path.join(outPath, 'val')):
+
+			os.makedirs(os.path.join(outPath, 'val'))
+
+		if not os.path.exists(os.path.join(outPath, 'test')):
+
+			os.makedirs(os.path.join(outPath, 'test'))
+
+		for path, dirs, files in os.walk(inPath):
+
+			for f in files:
+
+				if os.path.splitext(f)[-1] == '.wav':
+
+					try:
+
+						train, val, test = transformExtract(os.path.join(path, f))
+
+						for spectro in train:
+
+							outFile = 'spectro_' + str(spectro[0]) + '_' + os.path.splitext(f)[0] + '.pickle'
+
+							with open(os.path.join(os.path.join(outPath, 'train'), outFile), 'wb') as fs:
+
+								pickle.dump(spectro[1], fs)
+
+						for spectro in val:
+
+							outFile = 'spectro_' + str(spectro[0]) + '_' + os.path.splitext(f)[0] + '.pickle'
+
+							with open(os.path.join(os.path.join(outPath, 'val'), outFile), 'wb') as fs:
+
+								pickle.dump(spectro[1], fs)
+
+						for spectro in test:
+
+							outFile = 'spectro_' + str(spectro[0]) + '_' + os.path.splitext(f)[0] + '.pickle'
+
+							with open(os.path.join(os.path.join(outPath, 'test'), outFile), 'wb') as fs:
+
+								pickle.dump(spectro[1], fs)
+
+					except:
+
+						continue
+
+	else:
+
+		print('Error : mode')
 
 if __name__ == '__main__':
 
 	parser = argparse.ArgumentParser()
 	parser.add_argument('inPath', help = 'input path of wav file or directory')
 	parser.add_argument('outPath', help = 'input path of wav file or directory')
+	parser.add_argument('mode', help = 'continous or extraction')
 	
 	args = parser.parse_args()
 	
-	main(args.inPath, args.outPath)
+	main(args.inPath, args.outPath, args.mode)
 	sys.exit(0)
