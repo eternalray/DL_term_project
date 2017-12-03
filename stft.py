@@ -151,7 +151,6 @@ def main(inPath, outPath, mode = 'continuous'):
 
 							outFile = 'spectro_' + str(spectro[0]) + '_' + os.path.splitext(f)[0] + '.pickle'
 
-<<<<<<< HEAD
 							with open(os.path.join(os.path.join(outPath, 'val'), outFile), 'wb') as fs:
 
 								pickle.dump(spectro[1], fs)
@@ -171,64 +170,13 @@ def main(inPath, outPath, mode = 'continuous'):
 	else:
 
 		print('Error : mode')
-=======
-	if os.path.isdir(inPath):
-
-		for path, dirs, files in os.walk(inPath):
-
-			for f in files:
-
-				if os.path.splitext(f)[-1] == '.wav':
-
-					spectroList = transform(os.path.join(path, f))
-
-					for spectro in spectroList:
-
-						if not os.path.exists(outPath):
-
-							os.makedirs(outPath)
-
-						outFile = 'spectro_' + str(spectro[0]) + '_' + os.path.splitext(f)[0] + '.pickle'
-
-						with open(os.path.join(outPath, outFile), 'wb') as fs:
-
-							pickle.dump(spectro[1], fs)	
-
-	elif os.path.isfile(inPath):
-
-		if os.path.splitext(inPath)[-1] == '.wav':
-
-			spectroList = transform(inPath)
-
-			for spectro in spectroList:
-
-				if not os.path.exists(outPath):
-
-					os.makedirs(outPath)
-
-				outFile = 'spectro_' + str(spectro[0]) + '_' + os.path.splitext(inPath)[0] + '.pickle'
-
-				with open(os.path.join(outPath, outFile), 'wb') as fs:
-
-					pickle.dump(spectro[1], fs)
-
-	else:
-
-		raise
-
-	
->>>>>>> ffa5dd55c883ef408131922ee5135e95c21a4152
 
 if __name__ == '__main__':
 
 	parser = argparse.ArgumentParser()
 	parser.add_argument('inPath', help = 'input path of wav file or directory')
-<<<<<<< HEAD
 	parser.add_argument('outPath', help = 'input path of wav file or directory')
 	parser.add_argument('mode', help = 'continous or extraction')
-=======
-	parser.add_argument('outPath', help = 'output path of wav file or directory')
->>>>>>> ffa5dd55c883ef408131922ee5135e95c21a4152
 	
 	args = parser.parse_args()
 	
