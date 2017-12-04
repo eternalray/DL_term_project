@@ -18,9 +18,12 @@ def timeNow():
 	timeText = str(now.tm_year)[-2:] + '%02d%02d%02d%02d_' % (now.tm_mon, now.tm_mday, now.tm_hour, now.tm_min)
 
 	return timeTe
+
 class Encoder(nn.Module):
 
 	def __init__(self, ):
+
+		# input matrix (1025, 1251) : frequency * time
 
 		self.model = nn.Sequential(
 
