@@ -132,15 +132,15 @@ def main(inPath, outPath, mode = 'continuous'):
 
 					try:
 
-					spectroList = transformAll(os.path.join(path, f))
+						spectroList = transformAll(os.path.join(path, f))
 
-					for idx, spectro in enumerate(spectroList):
+						for idx, spectro in enumerate(spectroList):
 
-						outFile = 'spectro_' + str(idx) + '_' + os.path.splitext(f)[0] + '.pickle'
+							outFile = 'spectro_' + str(idx) + '_' + os.path.splitext(f)[0] + '.pickle'
 
-						with open(os.path.join(outPath, outFile), 'wb') as fs:
+							with open(os.path.join(outPath, outFile), 'wb') as fs:
 
-							pickle.dump(spectro, fs)
+								pickle.dump(spectro, fs)
 
 					except:
 
