@@ -81,9 +81,9 @@ def PresidentSing(nn.Module):
 
 	def __init__(self, ):
 
-		# Enc        : spectrogram (voice - any speaker) -> voice code (neutral pitch, formant, tempo)
-		# DecTarget  : voice code (pitch, formant, tempo) -> spectrogram (voice - target)
-		# DecRecover : voice code (pitch, formant, tempo) -> spectrogram (voice - original)
+		# Enc        : spectrogram (voice - any speaker) -> encoded voice code (neutral pitch, formant, tempo)
+		# DecTarget  : encoded voice code (neutral pitch, formant, tempo) -> spectrogram (voice - target)
+		# DecRecover : encoded voice code (neutral pitch, formant, tempo) -> spectrogram (voice - original)
 		# Dis        : spectrogram (voice) -> true or false (if target then yes, else no)
 
 		self.Enc = Encoder()############.cuda()
@@ -99,6 +99,28 @@ def PresidentSing(nn.Module):
 	def train(self, ):
 
 
+		pass
+
+	def save(self, filePath, prefix = '', option = 'all'):
+
+		if option == 'all':
+
+
+			time time time time # attach datetime to file name
+			torch.save(self.Enc, os.path.join(filePath, prefix + 'encoder.model'))
+
+		elif option == 'param':
+
+			pass
+
+		else:
+
+			print('error')
+			pass
+
+	def load(self):
+
+		pass
 
 		# 저장, 파라미터만
 		torch.save(the_model.state_dict(), PATH)
@@ -106,10 +128,6 @@ def PresidentSing(nn.Module):
 		# 불러오기, 파라미터만
 		the_model = TheModelClass(*args, **kwargs)
 		the_model.load_state_dict(torch.load(PATH))
-
-
-
-
 
 		# 저장, 모델 전체
 		torch.save(the_model, PATH)
