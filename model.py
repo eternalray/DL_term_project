@@ -23,7 +23,7 @@ class Encoder(nn.Module):
 
 	def __init__(self, ):
 
-		# input matrix (1025, 1251) : frequency * time
+		# input matrix (1025, 801) : frequency * time
 
 		self.model = nn.Sequential(
 

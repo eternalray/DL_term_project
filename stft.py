@@ -68,7 +68,7 @@ def transformAll(filePath, timeLength = 4):
 
 		spectro = librosa.stft(window, n_fft = 2048, hop_length = 256, win_length = 1024)
 
-		# need padding last window, make shape (1025, 1251)
+		# need padding last window, make shape (1025, 801)
 		if spectro.shape[1] < 801:
 
 			spectro = np.lib.pad(spectro, ((0, 0), (0, 801 - spectro.shape[1])), 'constant', constant_values = 0.0)
@@ -77,21 +77,7 @@ def transformAll(filePath, timeLength = 4):
 		
 	return result
 
-"""
-def itransform(filePath):
-
-	with open(file_name, 'rb') as f:
-
-		data = pickle.read(f)
-
-	audio = librosa.istft(data)
-
-	return audio
-
-def saveAudio(filePath):
-"""
-
-def GriffinLim(spectro, iterN = 60):
+def griffinLim(spectro, iterN = 50):
 
 	# reference : https://github.com/andabi/deep-voice-conversion/blob/master/tools/audio_utils.py
 	# 만약 오류가 생기면 밑의 참고 코드를 기반으로 수정, 잘 되는 듯함
@@ -109,36 +95,26 @@ def GriffinLim(spectro, iterN = 60):
 			_, phase = librosa.magphase(spec)
 			spec = spectro * np.exp(1.0j * np.angle(phase))
 
-
 	return audio
 
-"""
-def spectrogram2wav(mag, n_fft, win_length, hop_length, num_iters, phase_angle=None, length=None):
-    '''
-    :param mag: [f, t]
-    :param n_fft: n_fft
-    :param win_length: window length
-    :param hop_length: hop length
-    :param num_iters: num of iteration when griffin-lim reconstruction
-    :param phase_angle: phase angle
-    :param length: length of wav
-    :return: 
-    '''
-    assert (num_iters > 0)
-    if phase_angle is None:
-        phase_angle = np.pi * np.random.rand(*mag.shape)
-    spec = mag * np.exp(1.j * phase_angle)
+def concatAudio(dataList, dtype = 'audio'):
 
+	# dataList must be sorted
+	audio = list()
 
-    for i in range(num_iters):
-        wav = librosa.istft(spec, win_length=win_length, hop_length=hop_length, length=length)
-        if i != num_iters - 1:
-            spec = librosa.stft(wav, n_fft=n_fft, win_length=win_length, hop_length=hop_length)
-            _, phase = librosa.magphase(spec)
-            phase_angle = np.angle(phase)
-            spec = mag * np.exp(1.j * phase_angle)
-    return wav
-"""
+	if dtype == 'audio':
+
+		for data in dataList:
+
+			audio = audio + list(data)
+
+	elif dtype == 'spectrogram':
+
+		for data in dataList:
+
+			audio = audio + list(griffinLim(data))
+
+	return np.array(audio)
 
 def main(inPath, outPath, mode = 'continuous'):
 
