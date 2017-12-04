@@ -19,21 +19,32 @@ def timeNow():
 
 	return timeTe
 
+class Flatten(nn.Module):
+    
+	# from cs231 assignment
+
+	def forward(self, x):
+
+		N, C, H, W = x.size()
+
+		return x.view(N, -1)
+
 class Encoder(nn.Module):
 
-	def __init__(self, ):
+	def __init__(self):
 
 		# input matrix (1025, 801) : frequency * time
 
 		self.model = nn.Sequential(
 
-			nn.Conv2d(),
-			nn.ReLU(),
-			nn.MaxPool2d(),
-
-
-
-			ConvTranspose2d
+			nn.Conv2d(1, 32, 3, stride = 1, padding = 1),				# (1025, 801, 32)
+			nn.BatchNorm2d(32),
+			nn.ReLU(True),
+			nn.Conv2d(32, 64, 5, stride = 3, padding = 1),				# (341, 267, 64)
+			nn.BatchNorm2d(64),
+			nn.ReLU(True),
+			nn.Conv2d(64, 1, 1, stride = 1, padding = 0),				# (341, 267, 1)
+			nn.Tanh()
 		)
 
 	def forward(self, x):
@@ -44,13 +55,19 @@ class Encoder(nn.Module):
 
 class Decoder(nn.Module):
 
-	def __init__(self, ):
+	def __init__(self):
 
 		self.model = nn.Sequential(
 
-			nn.ConvTranspose2d(),
-			nn.ReLU(),
-			nn.Tanh(),
+			nn.ConvTranspose2d(1, 32, 3, stride = 1, padding = 1),		# (341, 267, 32)
+			nn.BatchNorm2d(32),
+			nn.ReLU(True),
+			nn.ConvTranspose2d(32, 64, 5, stride = 3, padding = 0),		# (1025, 801, 64)
+			nn.BatchNorm2d(64),
+			nn.ReLU(True),
+			nn.ConvTranspose2d(64, 1, 1, stride = 1, padding = 0),		# (1025, 801, 1)
+			nn.BatchNorm2d(1),
+			nn.ReLU(True)
 		)
 
 	def forward(self, x):
@@ -61,18 +78,30 @@ class Decoder(nn.Module):
 
 class Discriminator(nn.Module):
 
-	def __init__(self, ):
+	def __init__(self):
 
 		self.model = nn.Sequential(
 
-			nn.ConvTranspose2d(),
-			nn.ReLU(),
-			nn.Tanh(),
-		)
+			nn.Conv2d(1, 32, 3, stride = 1, padding = 1),				# (1025, 801, 32)
+			nn.BatchNorm2d(32),
+			nn.ReLU(True),
+			nn.Conv2d(32, 64, 5, stride = 3, padding = 1),				# (341, 267, 64)
+			nn.BatchNorm2d(64),
+			nn.ReLU(True),
+			nn.Conv2d(64, 1, 1, stride = 1, padding = 0),				# (341, 267, 1)
+			Flatten(),													# (341 * 267)
+			nn.Linear(341 * 267, 4096, bias = True),					# (4096)
+			nn.ReLU(True),
+			nn.Linear(4096, 1024, bias = True),							# (1024)
+			nn.ReLU(True),
+			nn.Linear(4096, 2, bias = True),							# (2)
+			nn.Softmax(True)
+		)			
 
 	def forward(self, x):
 
 		y = self.model(x)
+		_, y = torch.max(y)
 
 		return y
 
@@ -102,26 +131,35 @@ def PresidentSing(nn.Module):
 	def forward(self, x):
 
 		z = Enc.forward(x)
-		xRecover = DecRecover.forward(z)
 		xTarget = DecTarget.forward(z)
-		predicted = Dis.forward(xTarget)
+		zRecover = Enc.forward(xTarget)
+		xRecover = DecRecover.forward(z)
+		predReal = Dis.forward(x)
+		predTarget = Dis.forward(xTarget)
 
-		return z, xRecover, xTarget, predicted
+		return z, xTarget, xRecover, xRecover, predReal, predTarget
 
-	def train(self, ):
+	def train(self, learningRate = 1e-4):
 
 		optimList = list(self.Enc.parameters()) + list(self.DecRecover.parameters())
 		optimList + optimList + list(self.DecTarget.parameters()) + list(self.Dis.parameters())
-		self.optimizer = optim.Adam(optimList, lr = 1e-4)
+		self.optimizer = optim.Adam(optimList, lr = learningRate)
 
-		self.lossA = nn.CrossEntropyLoss()
-		self.lossB = nn.CrossEntropyLoss()
-
-
+		self.lossReconstruct = nn.MSELoss()
+		self.lossCycle = nn.L1Loss()
+		self.lossGAN = nn.CrossEntropyLoss()
 
 		for epoch in asdfsadfads:
 
-			loss = self.lossA(a, b) + self.lossB(c, d)
+			# get data
+			# x - spectrogram
+			# y - label
+
+			z, xTarget, xRecover, xRecover, predicted = self.forward(x)
+
+			loss = self.lossReconstruct(x, xRecover) + self.lossCycle(z, zRecover)
+			loss = loss + self.lossGAN(y, predReal) + self.lossGAN(y, 1 - predTarget)
+			
 			self.optimizer.zero_grad()
 			loss.backward()
 			optimizer.step()
