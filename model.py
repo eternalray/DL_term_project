@@ -179,6 +179,7 @@ def PresidentSing(nn.Module):
 			
 			try:
 
+				asdf
 				self.Enc = torch.load(filePath)
 
 			except:

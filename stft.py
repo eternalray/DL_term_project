@@ -95,21 +95,21 @@ def main(inPath, outPath, mode = 'continuous'):
 
 				if os.path.splitext(f)[-1] == '.wav':
 
-					try:
+					#try:
 
-						spectroList = transformAll(os.path.join(path, f))
+					spectroList = transformAll(os.path.join(path, f))
 
-						for spectro in spectroList:
+					for idx, spectro in enumerate(spectroList):
 
-							outFile = 'spectro_' + str(spectro[0]) + '_' + os.path.splitext(f)[0] + '.pickle'
+						outFile = 'spectro_' + str(idx) + '_' + os.path.splitext(f)[0] + '.pickle'
 
-							with open(os.path.join(outPath, outFile), 'wb') as fs:
+						with open(os.path.join(outPath, outFile), 'wb') as fs:
 
-								pickle.dump(spectro[1], fs)
+							pickle.dump(spectro, fs)
 
-					except:
+					#except:
 
-						continue
+					#	continue
 
 	elif mode == 'extraction':
 
@@ -139,29 +139,29 @@ def main(inPath, outPath, mode = 'continuous'):
 
 						train, val, test = transformExtract(os.path.join(path, f))
 
-						for spectro in train:
+						for idx, spectro in enumerate(train):
 
-							outFile = 'spectro_' + str(spectro[0]) + '_' + os.path.splitext(f)[0] + '.pickle'
+							outFile = 'spectro_' + str(idx) + '_' + os.path.splitext(f)[0] + '.pickle'
 
 							with open(os.path.join(os.path.join(outPath, 'train'), outFile), 'wb') as fs:
 
-								pickle.dump(spectro[1], fs)
+								pickle.dump(spectro, fs)
 
-						for spectro in val:
+						for idx, spectro in enumerate(val):
 
-							outFile = 'spectro_' + str(spectro[0]) + '_' + os.path.splitext(f)[0] + '.pickle'
+							outFile = 'spectro_' + str(idx) + '_' + os.path.splitext(f)[0] + '.pickle'
 
 							with open(os.path.join(os.path.join(outPath, 'val'), outFile), 'wb') as fs:
 
-								pickle.dump(spectro[1], fs)
+								pickle.dump(spectro, fs)
 
-						for spectro in test:
+						for idx, spectro in enumerate(test):
 
-							outFile = 'spectro_' + str(spectro[0]) + '_' + os.path.splitext(f)[0] + '.pickle'
+							outFile = 'spectro_' + str(idx) + '_' + os.path.splitext(f)[0] + '.pickle'
 
 							with open(os.path.join(os.path.join(outPath, 'test'), outFile), 'wb') as fs:
 
-								pickle.dump(spectro[1], fs)
+								pickle.dump(spectro, fs)
 
 					except:
 
