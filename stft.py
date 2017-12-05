@@ -64,7 +64,7 @@ def transformAll(filePath, timeLength = 4):
 	selected = audio[start : end]
 
 	# use 100% of audio
-	# selected = audio
+	#selected = audio
 
 	# STFT for divided audio
 	for window in divideList(selected, windowSize):
@@ -83,7 +83,6 @@ def transformAll(filePath, timeLength = 4):
 def griffinLim(spectro, iterN = 50):
 
 	# reference : https://github.com/andabi/deep-voice-conversion/blob/master/tools/audio_utils.py
-	# 만약 오류가 생기면 밑의 참고 코드를 기반으로 수정, 잘 되는 듯함
 
 	phase = np.pi * np.random.rand(*spectro.shape)
 	spec = spectro * np.exp(1.0j * phase)
