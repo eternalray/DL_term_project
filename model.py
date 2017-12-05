@@ -2,15 +2,14 @@ import os
 import sys
 import time
 import pickle
+import random
+import timeit
 import numpy as np
 import torch
 import torch.nn as nn
 import torch.optim as optim
+from torch.utils import data
 from torch.autograd import Variable
-from torch.utils.data import DataLoader
-from torch.utils.data import sampler
-import torchvision.datasets as dset
-import torchvision.transforms as T
 
 def timeNow():
 
@@ -28,6 +27,40 @@ class Flatten(nn.Module):
 		N, C, H, W = x.size()
 
 		return x.view(N, -1)
+
+class AudioLoader(data.Dataset):
+
+	def __init__(self, inPath, size, target = 'trump'):
+
+		dataList = list()
+
+		files = os.listdir(inPath)
+		files = [f for f in files if os.path.splitext(f)[-1] == '.pickle']
+		random.shuffle(files)
+		
+		self.fileList = files[:size]
+		self.len = size
+ 		self.target = target
+
+	def __getitem__(self, idx):
+
+		with open(os.path.join(inPath, self.files[idx]), 'rb') as fs:
+
+			data = torch.from_numpy(pickle.load(fs))
+
+		if target in self.files[idx]:
+
+			label = True
+
+		else:
+
+			label = False
+
+		return data, label
+    
+	def __len__(self):
+
+		return self.len
 
 class Encoder(nn.Module):
 
@@ -107,12 +140,15 @@ class Discriminator(nn.Module):
 
 def PresidentSing(nn.Module):
 
-	def __init__(self, ):
+	def __init__(self, dataPath, dataNum):
 
 		# Enc        : spectrogram (voice - any speaker) -> encoded voice code (neutral pitch, formant, tempo)
 		# DecTarget  : encoded voice code (neutral pitch, formant, tempo) -> spectrogram (voice - target)
 		# DecRecover : encoded voice code (neutral pitch, formant, tempo) -> spectrogram (voice - original)
 		# Dis        : spectrogram (voice) -> true or false (if target then yes, else no)
+
+		self.dataPath = dataPath
+		self.dataNum = dataNum
 
 		if torch.cuda.is_available():
 
@@ -130,7 +166,7 @@ def PresidentSing(nn.Module):
 
 	def forward(self, x):
 
-		z = Enc.forward(x)
+		z = 
 		xTarget = DecTarget.forward(z)
 		zRecover = Enc.forward(xTarget)
 		xRecover = DecRecover.forward(z)
@@ -139,30 +175,53 @@ def PresidentSing(nn.Module):
 
 		return z, xTarget, xRecover, xRecover, predReal, predTarget
 
-	def train(self, learningRate = 1e-4):
+	def train(self, learningRate = 1e-4, numEpoch = 5, numBatch = 128):
 
-		optimList = list(self.Enc.parameters()) + list(self.DecRecover.parameters())
-		optimList + optimList + list(self.DecTarget.parameters()) + list(self.Dis.parameters())
-		self.optimizer = optim.Adam(optimList, lr = learningRate)
+		# optimList = list(self.Enc.parameters()) + list(self.DecRecover.parameters())
+		# optimList + optimList + list(self.DecTarget.parameters()) + list(self.Dis.parameters())
+		# self.optimizer = optim.Adam(optimList, lr = learningRate)
+
+		optEnc
+		optDecTarget
+		optDecRecover
 
 		self.lossReconstruct = nn.MSELoss()
 		self.lossCycle = nn.L1Loss()
 		self.lossGAN = nn.CrossEntropyLoss()
 
-		for epoch in asdfsadfads:
+		dataSet = AudioLoader(self.dataPath, self.dataNum)
+		trainLoader = data.DataLoader(
 
-			# get data
-			# x - spectrogram
-			# y - label
+			dataset = dataSet,
+			batch_size = numBatch,
+			shuffle = True
+		)
 
-			z, xTarget, xRecover, xRecover, predicted = self.forward(x)
+		if not os.path.exists(os.path.join(os.getcwd(), 'models')):
 
-			loss = self.lossReconstruct(x, xRecover) + self.lossCycle(z, zRecover)
-			loss = loss + self.lossGAN(y, predReal) + self.lossGAN(y, 1 - predTarget)
-			
-			self.optimizer.zero_grad()
-			loss.backward()
-			optimizer.step()
+			os.makedirs(os.path.join(os.getcwd(), 'models'))
+
+		for epoch in range(numEpoch):
+
+			timeNow = timeit.default_timer()
+
+			for idx, data in enumerate(trainLoader, 0):
+
+				# x : spectrogram
+				# y : label
+				x, y = data
+
+				z, xTarget, xRecover, xRecover, predicted = self.forward(x)
+
+				loss = self.lossReconstruct(x, xRecover) + self.lossCycle(z, zRecover)
+				loss = loss + self.lossGAN(y, predReal) + self.lossGAN(y, 1 - predTarget)
+				
+				self.optimizer.zero_grad()
+				loss.backward()
+				optimizer.step()
+
+			print('Epoch ', str(epoch), ' finished, Elapsed time : ', str(timeNow = timeit.default_timer() - timeNow))
+			self.save(os.path.join(os.getcwd(), 'models'), 'epoch' + str(epoch), option = 'all')
 
 	def save(self, filePath, prefix = '', option = 'param'):
 
@@ -176,10 +235,10 @@ def PresidentSing(nn.Module):
 			
 			try:
 
-				torch.save(self.Enc, os.path.join(filePath, prefix + timeText + 'encoder.model'))
-				torch.save(self.DecTarget, os.path.join(filePath, prefix + timeText + 'decoder_target.model'))
-				torch.save(self.DecRecover, os.path.join(filePath, prefix + timeText + 'encoder_recover.model'))
-				torch.save(self.Dis, os.path.join(filePath, prefix + timeText + 'discriminator.model'))
+				torch.save(self.Enc, os.path.join(filePath, timeText + prefix + 'encoder.model'))
+				torch.save(self.DecTarget, os.path.join(filePath, timeText + prefix + 'decoder_target.model'))
+				torch.save(self.DecRecover, os.path.join(filePath, timeText + prefix + 'encoder_recover.model'))
+				torch.save(self.Dis, os.path.join(filePath, timeText + prefix + 'discriminator.model'))
 
 			except:
 
@@ -191,12 +250,15 @@ def PresidentSing(nn.Module):
 
 		elif option == 'param':
 
+			# not implemented
+			raise NOT_IMPLEMENTED
+
 			try:
 
-				torch.save(self.Enc.state_dict(), os.path.join(filePath, prefix + timeText + 'encoder.param'))
-				torch.save(self.DecTarget.state_dict(), os.path.join(filePath, prefix + timeText + 'decoder_target.param'))
-				torch.save(self.DecRecover.state_dict(), os.path.join(filePath, prefix + timeText + 'encoder_recover.param'))
-				torch.save(self.Dis.state_dict(), os.path.join(filePath, prefix + timeText + 'discriminator.param'))
+				torch.save(self.Enc.state_dict(), os.path.join(filePath, timeText + prefix + 'encoder.param'))
+				torch.save(self.DecTarget.state_dict(), os.path.join(filePath, timeText + prefix + 'decoder_target.param'))
+				torch.save(self.DecRecover.state_dict(), os.path.join(filePath, timeText + prefix + 'encoder_recover.param'))
+				torch.save(self.Dis.state_dict(), os.path.join(filePath, timeText + prefix + 'discriminator.param'))
 
 			except:
 
@@ -210,7 +272,7 @@ def PresidentSing(nn.Module):
 
 			print('error : invalid mode')
 
-	def load(self, filePath, prefix = '', option = 'param'):
+	def load(self, filePath, prefix = '', time = '', option = 'param'):
 
 		if not prefix == '':
 
@@ -220,8 +282,15 @@ def PresidentSing(nn.Module):
 			
 			try:
 
-				asdf
-				self.Enc = torch.load(filePath)
+				# load the model files which are created lastly
+				files = os.listdir(os.path.join(os.getcwd(), 'models'))
+				files.sort(reverse = True)
+				textTime = files[0][:10] + '_'
+
+				self.Enc = torch.load(os.path.join(filePath, timeText + prefix + 'encoder.model'))
+				self.DecTarget = torch.load(os.path.join(filePath, timeText + prefix + 'decoder_target.model'))
+				self.DecRecover = torch.load(os.path.join(filePath, timeText + prefix + 'encoder_recover.model'))
+				self.Dis = torch.load(os.path.join(filePath, timeText + prefix + 'discriminator.model'))
 
 			except:
 
@@ -233,9 +302,11 @@ def PresidentSing(nn.Module):
 
 		elif option == 'param':
 
+			# not implemented
+			raise NOT_IMPLEMENTED
+
 			try:
 
-				asdfsadfsdafadsf
 				self.Enc.load_state_dict(torch.load(path))
 
 			except:
