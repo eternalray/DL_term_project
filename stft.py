@@ -63,6 +63,9 @@ def transformAll(filePath, timeLength = 4):
 	# use 80% of audio
 	selected = audio[start : end]
 
+	# use 100% of audio
+	# selected = audio
+
 	# STFT for divided audio
 	for window in divideList(selected, windowSize):
 
