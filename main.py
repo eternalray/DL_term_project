@@ -10,32 +10,33 @@ from torch.utils.data import DataLoader
 from torch.utils.data import sampler
 import torchvision.datasets as dset
 import torchvision.transforms as T
-
+import argparse
 
 from stft import transformAll
 #from stft import itransform
 
-# 여기에는 옵션에 따라 트레이닝을 해주던가, wav 파일을 주면 변형된 wav 파일을 뱉어주는 기능이 들어가야 함
+#Modes - train / convert
+#train : 
+#convert : wav file to converted wav file
 
+def main(mode):
 
-def main():
-
+	print (mode)
 	pass
 
 if __name__ == '__main__':
 
 	parser = argparse.ArgumentParser()
-	parser.add_argument('mode', help = 'asdf')
+	parser.add_argument('mode', help = 'Mode option have train or convert')
+	args = parser.parse_args()
+	
+	if args.mode == 'train':
+		main(args.mode)
 
-
-	if mode == 'train':
-
-		pass
-
-	elif mode == 'convert':
-
-		pass
+	elif args.mode == 'convert':
+		main(args.mode)
 
 	else:
+		print('mode not defined...')
 
-		pass
+	sys.exit(0)
