@@ -222,25 +222,27 @@ def PresidentSing(nn.Module):
 			for idx, data in enumerate(trainLoader, 0):
 
 				lossHistory = list()
+				
 				# x : spectrogram
 				# y : label
 				x, y = data
-
-				# objective1 : x == xR 			- role of autoencoder
-				# objective2 : z == zT			- cycle reconstruction
-				# objective3 : pX -> false		- discriminator must discriminate real voice of target and fake voice of target
-				# objective4 : pT -> label 		- discriminator must discriminate target's voice and other's voice
 
 				self.optEncoder.zero_grad()
 				self.optDecoderR.zero_grad()
 				self.optDecoderT.zero_grad()
 				self.optDiscrim.zero_grad()
 
+				# forward pass 1
 				z = self.encoder.forward(x)
 				xR = self.decoderR.forward(z)
 				xT = self.decoderT.forward(z)
 				zT = self.encoder.forward(xT)
 				#xTR = self.decoderR.forward(zT)
+
+				# objective1 : x == xR 			- role of autoencoder
+				# objective2 : z == zT			- cycle reconstruction
+				# objective3 : pX -> false		- discriminator must discriminate real voice of target and fake voice of target
+				# objective4 : pT -> label 		- discriminator must discriminate target's voice and other's voice
 
 				loss = self.lossReconstruct(x, xR)
 				loss.backward()
@@ -252,6 +254,7 @@ def PresidentSing(nn.Module):
 				lossHistory.append(loss)
 				self.optEncoder.step()
 
+				# forward pass 2
 				pX = self.discriminator.forward(x)
 				pT = self.discriminator.forward(xT)
 
@@ -262,7 +265,7 @@ def PresidentSing(nn.Module):
 				loss += self.lossGAN(pX[0], 1)
 				loss += self.lossGAN(pX[1], y)
 				loss += self.lossGAN(pT[0], 0)
-				loss += self.lossGAN(pT[1], 1)				# it can be a problem
+				loss += self.lossGAN(pT[1], 1)						# it can be a problem
 				loss.backward()
 				lossHistory.append(loss)
 				self.optDecoderT.step()
