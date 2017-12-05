@@ -19,7 +19,7 @@ def timeNow():
 	return timeTe
 
 class Flatten(nn.Module):
-    
+
 	# from cs231 assignment
 
 	def forward(self, x):
@@ -50,14 +50,14 @@ class AudioLoader(data.Dataset):
 
 		if target in self.files[idx]:
 
-			label = True
+			label = 1
 
 		else:
 
-			label = False
+			label = 0
 
 		return data, label
-    
+
 	def __len__(self):
 
 		return self.len
@@ -128,7 +128,7 @@ class Discriminator(nn.Module):
 			nn.Linear(4096, 1024, bias = True),							# (1024)
 			nn.ReLU(True),
 			nn.Linear(4096, 2, bias = True),							# (2)
-			nn.Softmax(True)
+			nn.Sigmoid()
 		)			
 
 	def forward(self, x):
@@ -142,52 +142,66 @@ def PresidentSing(nn.Module):
 
 	def __init__(self, dataPath, dataNum):
 
-		# Enc        : spectrogram (voice - any speaker) -> encoded voice code (neutral pitch, formant, tempo)
-		# DecTarget  : encoded voice code (neutral pitch, formant, tempo) -> spectrogram (voice - target)
-		# DecRecover : encoded voice code (neutral pitch, formant, tempo) -> spectrogram (voice - original)
-		# Dis        : spectrogram (voice) -> true or false (if target then yes, else no)
+		# encoder       : spectrogram (voice - any speaker) -> encoded voice code (neutral pitch, formant, tempo)
+		# decoderR 		: encoded voice code (neutral pitch, formant, tempo) -> spectrogram (voice - original)
+		# decoderT  	: encoded voice code (neutral pitch, formant, tempo) -> spectrogram (voice - target)
+		# discriminator : spectrogram (voice) -> true or false (if target then yes, else no)
 
 		self.dataPath = dataPath
 		self.dataNum = dataNum
 
 		if torch.cuda.is_available():
 
-			self.Enc = Encoder().cuda()
-			self.DecTarget = Decoder().cuda()
-			self.DecRecover = Decoder().cuda()
-			self.Dis = Discriminator().cuda()
+			self.encoder = Encoder().cuda()
+			self.decoderR = Decoder().cuda()
+			self.decoderT = Decoder().cuda()
+			self.discriminator = Discriminator().cuda()
 
 		else:
 
-			self.Enc = Encoder()
-			self.DecTarget = Decoder()
-			self.DecRecover = Decoder()
-			self.Dis = Discriminator()
+			self.encoder = Encoder()
+			self.decoderR = Decoder()
+			self.decoderT = Decoder()
+			self.discriminator = Discriminator()
 
 	def forward(self, x):
 
-		z = 
-		xTarget = DecTarget.forward(z)
-		zRecover = Enc.forward(xTarget)
-		xRecover = DecRecover.forward(z)
-		predReal = Dis.forward(x)
-		predTarget = Dis.forward(xTarget)
+		# x 	: input
+		# z 	: latent matrix of x, 								x   -> encoder  	 -> z
+		# xR	: recovered spectrogram from autoencoder,			z   -> decoderR 	 -> xR
+		# xT 	: spectrogram generated to target's voice,			z   -> decoderT 	 -> xT
+		# zT	: latent matrix of xT,								xT  -> encoder  	 -> zT
+		# xTR	: recovered target's spectrogram from autoencoder,	xTR -> encoder  	 -> zT
+		# pX 	: predicted value of discriminator Real / Fake,		x   -> discriminator -> pX
+		# pT 	: predicted value of discriminator True / False,	xT  -> discriminator -> pT
 
-		return z, xTarget, xRecover, xRecover, predReal, predTarget
+		z = self.encoder.forward(x)
+		xR = self.decoderR.forward(z)
+		xT = self.decoderT.forward(z)
+		zT = self.encoder.forward(xT)
+		xTR = self.decoderR.forward(zT)
+		pX = self.discriminator.forward(x)
+		pT = self.discriminator.forward(xT)
 
-	def train(self, learningRate = 1e-4, numEpoch = 5, numBatch = 128):
+		return z, xR, xT, zT, xTR, pX, pT
 
-		# optimList = list(self.Enc.parameters()) + list(self.DecRecover.parameters())
-		# optimList + optimList + list(self.DecTarget.parameters()) + list(self.Dis.parameters())
-		# self.optimizer = optim.Adam(optimList, lr = learningRate)
+	def convert(self, x):
 
-		optEnc
-		optDecTarget
-		optDecRecover
+		z = self.encoder.forward(x)
+		xT = self.decoderT.forward(z)
+
+		return z, xT
+
+	def train(self, learningRate = 1e-4, numEpoch = 10, numBatch = 512):
+
+		self.optEncoder = optim.Adam(self.encoder.parameters(), lr = learningRate)
+		self.optDecoderR = optim.Adam(self.decoderR.parameters(), lr = learningRate)
+		self.optDecoderT = optim.Adam(self.decoderT.parameters(), lr = learningRate)
+		self.optDiscrim = optim.Adam(self.discriminator.parameters(), lr = learningRate)
 
 		self.lossReconstruct = nn.MSELoss()
 		self.lossCycle = nn.L1Loss()
-		self.lossGAN = nn.CrossEntropyLoss()
+		self.lossGAN = nn.BCELoss()
 
 		dataSet = AudioLoader(self.dataPath, self.dataNum)
 		trainLoader = data.DataLoader(
@@ -207,21 +221,60 @@ def PresidentSing(nn.Module):
 
 			for idx, data in enumerate(trainLoader, 0):
 
+				lossHistory = list()
 				# x : spectrogram
 				# y : label
 				x, y = data
 
-				z, xTarget, xRecover, xRecover, predicted = self.forward(x)
+				# objective1 : x == xR 			- role of autoencoder
+				# objective2 : z == zT			- cycle reconstruction
+				# objective3 : pX -> false		- discriminator must discriminate real voice of target and fake voice of target
+				# objective4 : pT -> label 		- discriminator must discriminate target's voice and other's voice
 
-				loss = self.lossReconstruct(x, xRecover) + self.lossCycle(z, zRecover)
-				loss = loss + self.lossGAN(y, predReal) + self.lossGAN(y, 1 - predTarget)
-				
-				self.optimizer.zero_grad()
+				self.optEncoder.zero_grad()
+				self.optDecoderR.zero_grad()
+				self.optDecoderT.zero_grad()
+				self.optDiscrim.zero_grad()
+
+				z = self.encoder.forward(x)
+				xR = self.decoderR.forward(z)
+				xT = self.decoderT.forward(z)
+				zT = self.encoder.forward(xT)
+				#xTR = self.decoderR.forward(zT)
+
+				loss = self.lossReconstruct(x, xR)
 				loss.backward()
-				optimizer.step()
+				lossHistory.append(loss)
+				self.optDecoderR.step()
 
-			print('Epoch ', str(epoch), ' finished, Elapsed time : ', str(timeNow = timeit.default_timer() - timeNow))
+				loss += self.lossCycle(z, zT)
+				loss.backward()
+				lossHistory.append(loss)
+				self.optEncoder.step()
+
+				pX = self.discriminator.forward(x)
+				pT = self.discriminator.forward(xT)
+
+				# index 0 : Real / Fake
+				# index 1 : Target / Otherwise
+				# y == 1 if Target
+				# y == 0 if Otherwise
+				loss += self.lossGAN(pX[0], 1)
+				loss += self.lossGAN(pX[1], y)
+				loss += self.lossGAN(pT[0], 0)
+				loss += self.lossGAN(pT[1], 1)				# it can be a problem
+				loss.backward()
+				lossHistory.append(loss)
+				self.optDecoderT.step()
+				self.optDiscrim.step()
+
+				history.append((epoch, idx, lossHistory))
+
+			print('Epoch ', str(epoch), ' finished')
+			print('Elapsed time : ', str(timeNow = timeit.default_timer() - timeNow))
 			self.save(os.path.join(os.getcwd(), 'models'), 'epoch' + str(epoch), option = 'all')
+
+		return history
 
 	def save(self, filePath, prefix = '', option = 'param'):
 
