@@ -28,30 +28,33 @@ def main(inputAudioFile, mode):
 	if mode == 'train':
 		pass
 	elif mode =='convert':
-		# stft.py - Use convertAll, griffinLim, concatAudio Functions
 
 		# read a wav file
 		# wav file to Spectrogram
 		inputSpectroList = stft.transformAll(inputAudioFile, timeLength = 4)
-		print("audio length : ", len(inputSpectroList)*4)
+		#print("audio length : ", len(inputSpectroList)*4)
 		# input matrix (1025, 801) : frequency * time
-		print("input matrix size : ",inputSpectroList[0].shape)
+		#print("input matrix size : ",inputSpectroList[0].shape)
 
 		# save a spectrogram of input audio file
 		
 		# Forward the spectrogram
 		# input spectrogram -> Model -> ouput spectrogram 
+
+		#Error on this 
 		presidentSing = PresidentSing("thisFilePathisNotUsed", 1)
 		
+		#Forward Path to get output spectrogram list
 		outputSpectrolist = []
 		for  inputSpectro in inputSpectroList:
 			_,_,_,_,target_spectrogram, _, _ = presidentSing.Forward(inputSpectro)
 			outputSpectrolist.append(target_spectrogram)
 
-		#output spectrogram to wav file
+		#concat 'output spectrogram list' to audio array
 		outputAudioArray = concatAudio(outputSpectrolist, dtype = 'spectrogram')
 
-		#Save the output wav file
+		#Save the output audio array to wav file
+		#output file name is 'inputfilename_convert.wav'
 		outputFileName = inputAudioPath[:-4] + '_' + 'convert.wav'
 		librosa.output.write_wav(outputFileName, outputAudioArray,sr = 51200)
 
@@ -59,7 +62,6 @@ def main(inputAudioFile, mode):
 		pass
 
 	pass
-
 
 if __name__ == '__main__':
 
