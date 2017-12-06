@@ -4,7 +4,7 @@ import timeit
 import argparse
 
 import STFT
-import utils
+import util
 from model import PresidentSing
 
 # Usage : python main.py <inPath> <outPath> <mode>
@@ -57,14 +57,14 @@ def convertFile(convertModel, path):
 
 def main(path, modelPath, mode):
 
-	convertModel = PresidentSing(path, modelPath, 10240)
+	convertModel = PresidentSing(path, modelPath, 1024)
 
 	if mode == 'train':
 
 		print('Train started')
 		timeNow = timeit.default_timer()
 		
-		lossHistory = model.train()
+		lossHistory = convertModel.train()
 
 		print('Train ended')
 		print('Elapsed time : ', timeit.default_timer() - timeNow)

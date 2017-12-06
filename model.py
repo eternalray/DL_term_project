@@ -4,12 +4,12 @@ import time
 import pickle
 import random
 import timeit
-import numpy as np
 import torch
 import torch.nn as nn
 import torch.optim as optim
-from torch.utils import data
+from torch.utils import data as torchData
 from torch.autograd import Variable
+import numpy as np
 
 import util
 
@@ -23,9 +23,11 @@ class Flatten(nn.Module):
 
 		return x.view(N, -1)
 
-class AudioLoader(data.Dataset):
+class AudioLoader(torchData.Dataset):
 
 	def __init__(self, inPath, size, target = 'trump'):
+
+		# super(AudioLoader, self).__init__()
 
 		dataList = list()
 
@@ -33,23 +35,31 @@ class AudioLoader(data.Dataset):
 		files = [f for f in files if os.path.splitext(f)[-1] == '.pickle']
 		random.shuffle(files)
 		
+		self.inPath = inPath
 		self.fileList = files[:size]
 		self.len = size
 		self.target = target
 
 	def __getitem__(self, idx):
 
-		with open(os.path.join(inPath, self.files[idx]), 'rb') as fs:
+		with open(os.path.join(self.inPath, self.fileList[idx]), 'rb') as fs:
 
 			data = torch.from_numpy(pickle.load(fs))
 
-		if target in self.files[idx]:
+		if self.target in self.fileList[idx]:
 
-			label = 1
+			label = 1.0
 
 		else:
 
-			label = 0
+			label = 0.0
+
+		label = torch.from_numpy(np.array([label]))
+
+		if torch.cuda.is_available():
+
+			data = data.cuda()
+			label = label.cuda()
 
 		return data, label
 
@@ -95,13 +105,13 @@ class Decoder(nn.Module):
 		self.model = nn.Sequential(
 
 			nn.ConvTranspose2d(1, 96, 3, stride = 1, padding = 1),			# (113, 89, 96)
-			nn.BatchNorm2d(32),
+			nn.BatchNorm2d(96),
 			nn.ReLU(True), 
 			nn.ConvTranspose2d(96, 64, 5, stride = 3, padding = (0, 1)),	# (341, 267, 64)
 			nn.BatchNorm2d(64),
 			nn.ReLU(True),
-			nn.ConvTranspose2d(64, 32, 5, stride = 3, padding = 0),			# (1025, 801, 32)
-			nn.BatchNorm2d(96),
+			nn.ConvTranspose2d(64, 32, 5, stride = 3, padding = (0,1)),		# (1025, 801, 32)
+			nn.BatchNorm2d(32),
 			nn.ReLU(True),
 			nn.ConvTranspose2d(32, 1, 1, stride = 1, padding = 0),			# (1025, 801, 1)
 			nn.BatchNorm2d(1),
@@ -133,18 +143,17 @@ class Discriminator(nn.Module):
 			nn.ReLU(True),
 			nn.Conv2d(96, 1, 1, stride = 1, padding = 0),				# (113, 89, 1)
 			Flatten(),													# (113 * 89)
-			nn.Linear(341 * 267, 4096, bias = True),					# (4096)
+			nn.Linear(113 * 89, 4096, bias = True),						# (4096)
 			nn.ReLU(True),
 			nn.Linear(4096, 1024, bias = True),							# (1024)
 			nn.ReLU(True),
-			nn.Linear(4096, 2, bias = True),							# (2)
+			nn.Linear(1024, 2, bias = True),							# (2)
 			nn.Sigmoid()
 		)			
 
 	def forward(self, x):
 
 		y = self.model(x)
-		_, y = torch.max(y)
 
 		return y
 
@@ -206,9 +215,14 @@ class PresidentSing(nn.Module):
 		z = self.encoder.forward(x)
 		xT = self.decoderT.forward(z)
 
-		return z, xT
+		if torch.cuda.is_available():
 
-	def train(self, learningRate = 1e-4, numEpoch = 10, numBatch = 512):
+			z = z.cpu()
+			xT = xT.cpu()
+
+		return z.data, xT.data
+
+	def train(self, learningRate = 1e-4, numEpoch = 10, numBatch = 4):
 
 		history = list()
 
@@ -222,7 +236,7 @@ class PresidentSing(nn.Module):
 		self.lossGAN = nn.BCELoss()
 
 		dataSet = AudioLoader(os.path.join(self.inPath, 'train'), self.dataNum)
-		trainLoader = data.DataLoader(
+		trainLoader = torchData.DataLoader(
 
 			dataset = dataSet,
 			batch_size = numBatch,
@@ -240,6 +254,10 @@ class PresidentSing(nn.Module):
 				# x : spectrogram
 				# y : label
 				x, y = data
+				x = Variable(x)
+				y = Variable(y.type(torch.cuda.FloatTensor))
+
+				x = x.view(numBatch, 1, 1025, 801)
 
 				self.optEncoder.zero_grad()
 				self.optDecoderR.zero_grad()
@@ -258,32 +276,44 @@ class PresidentSing(nn.Module):
 				# objective3 : pX -> false		- discriminator must discriminate real voice of target and fake voice of target
 				# objective4 : pT -> label 		- discriminator must discriminate target's voice and other's voice
 
-				loss = self.lossReconstruct(x, xR)
-				loss.backward()
-				lossHistory.append(loss)
+				loss = torch.sum((x - xR) ** 2) / numBatch
+				#loss = self.lossReconstruct(x, xR)
+				loss.backward(retain_graph = True)
+				lossHistory.append(loss.data[0])
 				self.optDecoderR.step()
 
-				loss += self.lossCycle(z, zT)
-				loss.backward()
-				lossHistory.append(loss)
+				loss += torch.sum(torch.abs(z - zT)) / numBatch
+				#loss += self.lossCycle(z, zT)
+				loss.backward(retain_graph = True)
+				lossHistory.append(loss.data[0])
 				self.optEncoder.step()
 
 				# forward pass 2
 				pX = self.discriminator.forward(x)
 				pT = self.discriminator.forward(xT)
+				one = Variable(torch.Tensor([1.0])).cuda().expand(pX.size())
 
 				# index 0 : Real / Fake
 				# index 1 : Target / Otherwise
 				# y == 1 if Target
 				# y == 0 if Otherwise
-				loss += self.lossGAN(pX[0], 1)
-				loss += self.lossGAN(pX[1], y)
-				loss += self.lossGAN(pT[0], 0)
-				loss += self.lossGAN(pT[1], 1)						# it can be a problem
+
+				loss -= torch.sum(torch.log(pX), 0)[0] / numBatch
+				loss -= torch.sum(y * torch.log(pX) + (one - y) * torch.log(one - pX), 0)[1] / numBatch
+				loss -= torch.sum(torch.log(pT), 0)[0] / numBatch
+				loss -= torch.sum(torch.log(pT), 0)[1] / numBatch					# it can be a problem
+				#loss += self.lossGAN(pX[0], 1)
+				#loss += self.lossGAN(pX[1], y)
+				#loss += self.lossGAN(pT[0], 0)
+				#loss += self.lossGAN(pT[1], 1)										# it can be a problem
 				loss.backward()
-				lossHistory.append(loss)
+				lossHistory.append(loss.data[0])
 				self.optDecoderT.step()
 				self.optDiscrim.step()
+
+				if idx % 50 == 0:
+
+					print(loss.data[0])
 
 				history.append((epoch, idx, lossHistory))
 
