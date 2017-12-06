@@ -194,6 +194,8 @@ class PresidentSing(nn.Module):
 
 	def train(self, learningRate = 1e-4, numEpoch = 10, numBatch = 512):
 
+		history = list()
+
 		self.optEncoder = optim.Adam(self.encoder.parameters(), lr = learningRate)
 		self.optDecoderR = optim.Adam(self.decoderR.parameters(), lr = learningRate)
 		self.optDecoderT = optim.Adam(self.decoderT.parameters(), lr = learningRate)
