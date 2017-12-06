@@ -36,7 +36,6 @@ class AudioLoader(data.Dataset):
 		self.fileList = files[:size]
 		self.len = size
 		self.target = target
-		#indent fixed by minuk
 
 	def __getitem__(self, idx):
 
@@ -62,17 +61,22 @@ class Encoder(nn.Module):
 
 	def __init__(self):
 
+		super(Encoder, self).__init__()
+		
 		# input matrix (1025, 801) : frequency * time
 
 		self.model = nn.Sequential(
 
-			nn.Conv2d(1, 32, 3, stride = 1, padding = 1),				# (1025, 801, 32)
+			nn.Conv2d(1, 32, 3, stride = 1, padding = 1),					# (1025, 801, 32)
 			nn.BatchNorm2d(32),
 			nn.ReLU(True),
-			nn.Conv2d(32, 64, 5, stride = 3, padding = 1),				# (341, 267, 64)
+			nn.Conv2d(32, 64, 5, stride = 3, padding = 1),					# (341, 267, 64)
 			nn.BatchNorm2d(64),
 			nn.ReLU(True),
-			nn.Conv2d(64, 1, 1, stride = 1, padding = 0),				# (341, 267, 1)
+			nn.Conv2d(64, 96, 5, stride = 3, padding = (0, 1)),				# (113, 89, 96)
+			nn.BatchNorm2d(96),
+			nn.ReLU(True),
+			nn.Conv2d(96, 1, 1, stride = 1, padding = 0),					# (113, 89, 1)
 			nn.Tanh()
 		)
 
@@ -86,15 +90,20 @@ class Decoder(nn.Module):
 
 	def __init__(self):
 
+		super(Decoder, self).__init__()
+
 		self.model = nn.Sequential(
 
-			nn.ConvTranspose2d(1, 32, 3, stride = 1, padding = 1),		# (341, 267, 32)
+			nn.ConvTranspose2d(1, 96, 3, stride = 1, padding = 1),			# (113, 89, 96)
 			nn.BatchNorm2d(32),
-			nn.ReLU(True),
-			nn.ConvTranspose2d(32, 64, 5, stride = 3, padding = 0),		# (1025, 801, 64)
+			nn.ReLU(True), 
+			nn.ConvTranspose2d(96, 64, 5, stride = 3, padding = (0, 1)),	# (341, 267, 64)
 			nn.BatchNorm2d(64),
 			nn.ReLU(True),
-			nn.ConvTranspose2d(64, 1, 1, stride = 1, padding = 0),		# (1025, 801, 1)
+			nn.ConvTranspose2d(64, 32, 5, stride = 3, padding = 0),			# (1025, 801, 32)
+			nn.BatchNorm2d(96),
+			nn.ReLU(True),
+			nn.ConvTranspose2d(32, 1, 1, stride = 1, padding = 0),			# (1025, 801, 1)
 			nn.BatchNorm2d(1),
 			nn.ReLU(True)
 		)
@@ -109,6 +118,8 @@ class Discriminator(nn.Module):
 
 	def __init__(self):
 
+		super(Discriminator, self).__init__()
+
 		self.model = nn.Sequential(
 
 			nn.Conv2d(1, 32, 3, stride = 1, padding = 1),				# (1025, 801, 32)
@@ -117,8 +128,11 @@ class Discriminator(nn.Module):
 			nn.Conv2d(32, 64, 5, stride = 3, padding = 1),				# (341, 267, 64)
 			nn.BatchNorm2d(64),
 			nn.ReLU(True),
-			nn.Conv2d(64, 1, 1, stride = 1, padding = 0),				# (341, 267, 1)
-			Flatten(),													# (341 * 267)
+			nn.Conv2d(64, 96, 5, stride = 3, padding = (0, 1)),			# (113, 89, 96)
+			nn.BatchNorm2d(96),
+			nn.ReLU(True),
+			nn.Conv2d(96, 1, 1, stride = 1, padding = 0),				# (113, 89, 1)
+			Flatten(),													# (113 * 89)
 			nn.Linear(341 * 267, 4096, bias = True),					# (4096)
 			nn.ReLU(True),
 			nn.Linear(4096, 1024, bias = True),							# (1024)
@@ -137,6 +151,8 @@ class Discriminator(nn.Module):
 class PresidentSing(nn.Module):
 
 	def __init__(self, inPath, outPath, dataNum):
+
+		super(PresidentSing, self).__init__()
 
 		# encoder       : spectrogram (voice - any speaker) -> encoded voice code (neutral pitch, formant, tempo)
 		# decoderR 		: encoded voice code (neutral pitch, formant, tempo) -> spectrogram (voice - original)
