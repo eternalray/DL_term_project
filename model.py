@@ -40,7 +40,8 @@ class AudioLoader(data.Dataset):
 		
 		self.fileList = files[:size]
 		self.len = size
- 		self.target = target
+		self.target = target
+		#indent fixed by minuk
 
 	def __getitem__(self, idx):
 
