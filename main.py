@@ -21,47 +21,52 @@ from model import PresidentSing
 #         python main.py ./audios ./converted convert
 #         python main.py ./dataset ./model train
 
-def convert(convertModel, inPath, outPath):
+def convert(convertModel, path):
 
-	if os.path.isfile(inPath):
+	if os.path.isfile(path):
 
-		spectroList = STFT.transformAll(inPath)
+		if os.path.splitext(path)[-1] == '.wav':
 
+			fileName, _ = convertFile(convertModel, path)
 
+	elif os.path.isdir(path):
 
+		for ps, dirs, files in os.walk(path):
 
-	# read a wav file
-	# wav file to Spectrogram
-	spectroList = stft.transformAll(inputAudioFile, timeLength = 4)
-	#print("audio length : ", len(inputSpectroList)*4)
-	# input matrix (1025, 801) : frequency * time
-	#print("input matrix size : ",inputSpectroList[0].shape)
+			for f in files:
 
-	# save a spectrogram of input audio file
+				if os.path.splitext(f)[-1] == '.wav':
+
+					fileName, _ = convertFile(convertModel, os.path.join(ps, f))
+
+	else:
+
+		print('Error : Given path is wrong')
+
+def convertFile(convertModel, path):
+
+	audioList = list()
+
+	spectroList = STFT.transformAll(path)
+
+	for spectro in spectroList:
+
+		_, converted = convertModel.convert(spectro)
+		convertedAudio = STFT.griffinLim(converted)
+		audioList.append(convertedAudio)
+
+	audio = STFT.concatAudio(audioList)
 	
-	# Forward the spectrogram
-	# input spectrogram -> Model -> ouput spectrogram 
+	dirName = os.path.dirname(path)
+	fileName = 'converted_' + os.path.basename(path)
+	librosa.output.write_wav(os.path.join(dirName, fileName, audio, sr = 51200))
+	print('Output : ', fileName)
 
-	#Error on this 
-	presidentSing = PresidentSing("thisFilePathisNotUsed", 1)
-	
-	#Forward Path to get output spectrogram list
-	outputSpectrolist = []
-	for  inputSpectro in inputSpectroList:
-		_,_,_,_,target_spectrogram, _, _ = presidentSing.Forward(inputSpectro)
-		outputSpectrolist.append(target_spectrogram)
+	return fileName, audio
 
-	#concat 'output spectrogram list' to audio array
-	outputAudioArray = concatAudio(outputSpectrolist, dtype = 'spectrogram')
+def main(path, pathModel, mode):
 
-	#Save the output audio array to wav file
-	#output file name is 'inputfilename_convert.wav'
-	outputFileName = inputAudioPath[:-4] + '_' + 'convert.wav'
-	librosa.output.write_wav(outputFileName, outputAudioArray,sr = 51200)
-
-def main(inPath, outPath, mode):
-
-	convertModel = PresidentSing(inPath, outPath, 10240)
+	convertModel = PresidentSing(path, pathModel, 10240)
 
 	if mode == 'train':
 
@@ -75,12 +80,12 @@ def main(inPath, outPath, mode):
 
 	elif mode == 'convert':
 
-		convertModel.load(inPath)
+		convertModel.load(pathModel)
 
 		print('Convert started')
 		timeNow = timeit.default_timer()
 
-		convert(convertModel, inPath, outPath)
+		convert(convertModel, path)
 
 		print('Convert ended')
 		print('Elapsed time : ', timeit.default_timer() - timeNow)
@@ -91,11 +96,11 @@ def main(inPath, outPath, mode):
 
 if __name__ == '__main__':
 
-	parser = argparse.ArgumentParser()
-	parser.add_argument('inPath', help = 'Input directory of audio or dataset')
-	parser.add_argument('outPath', help = 'Output directory of converted audio or model')
+	parser = argparse.ArgumentParser() 
+	parser.add_argument('path', help = 'Path 1 : train - dataset directory, convert - input / output directory')
+	parser.add_argument('pathModel', help = 'Path 2 : model directory')
 	parser.add_argument('mode', help = 'Mode option : <train> or <convert>')
 	args = parser.parse_args()
 	
-	main(args.inPath, args.outPath, args.mode)
+	main(args.path, args.pathModel, args.mode)
 	sys.exit(0)
