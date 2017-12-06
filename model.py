@@ -147,6 +147,7 @@ class PresidentSing(nn.Module):
 		# decoderR 		: encoded voice code (neutral pitch, formant, tempo) -> spectrogram (voice - original)
 		# decoderT  	: encoded voice code (neutral pitch, formant, tempo) -> spectrogram (voice - target)
 		# discriminator : spectrogram (voice) -> true or false (if target then yes, else no)
+		super(PresidentSing, self).__init__()
 
 		self.dataPath = dataPath
 		self.dataNum = dataNum
