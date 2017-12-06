@@ -1,24 +1,15 @@
 import os
 import sys
-import pickle
 import timeit
 import argparse
-import numpy as np
-import torch
-import torch.nn as nn
-import torch.optim as optim
-from torch.autograd import Variable
-from torch.utils.data import DataLoader
-from torch.utils.data import sampler
-import torchvision.datasets as dset
-import torchvision.transforms as T
 
 import STFT
+import utils
 from model import PresidentSing
 
 # Usage : python main.py <inPath> <outPath> <mode>
 #
-#         python main.py ./audios ./converted convert
+#         python main.py ./audios ./model convert
 #         python main.py ./dataset ./model train
 
 def convert(convertModel, path):
@@ -64,9 +55,9 @@ def convertFile(convertModel, path):
 
 	return fileName, audio
 
-def main(path, pathModel, mode):
+def main(path, modelPath, mode):
 
-	convertModel = PresidentSing(path, pathModel, 10240)
+	convertModel = PresidentSing(path, modelPath, 10240)
 
 	if mode == 'train':
 
@@ -78,9 +69,11 @@ def main(path, pathModel, mode):
 		print('Train ended')
 		print('Elapsed time : ', timeit.default_timer() - timeNow)
 
+		util.plotLossHistory(lossHistory, modelPath)
+
 	elif mode == 'convert':
 
-		convertModel.load(pathModel)
+		convertModel.load(modelPath)
 
 		print('Convert started')
 		timeNow = timeit.default_timer()
@@ -98,9 +91,9 @@ if __name__ == '__main__':
 
 	parser = argparse.ArgumentParser() 
 	parser.add_argument('path', help = 'Path 1 : train - dataset directory, convert - input / output directory')
-	parser.add_argument('pathModel', help = 'Path 2 : model directory')
+	parser.add_argument('modelPath', help = 'Path 2 : model directory')
 	parser.add_argument('mode', help = 'Mode option : <train> or <convert>')
 	args = parser.parse_args()
 	
-	main(args.path, args.pathModel, args.mode)
+	main(args.path, args.modelPath, args.mode)
 	sys.exit(0)

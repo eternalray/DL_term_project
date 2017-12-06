@@ -11,12 +11,7 @@ import torch.optim as optim
 from torch.utils import data
 from torch.autograd import Variable
 
-def timeNow():
-
-	now = time.localtime()
-	timeText = str(now.tm_year)[-2:] + '%02d%02d%02d%02d_' % (now.tm_mon, now.tm_mday, now.tm_hour, now.tm_min)
-
-	return timeTe
+import util
 
 class Flatten(nn.Module):
 
@@ -147,8 +142,10 @@ class PresidentSing(nn.Module):
 		# decoderR 		: encoded voice code (neutral pitch, formant, tempo) -> spectrogram (voice - original)
 		# decoderT  	: encoded voice code (neutral pitch, formant, tempo) -> spectrogram (voice - target)
 		# discriminator : spectrogram (voice) -> true or false (if target then yes, else no)
-		super(PresidentSing, self).__init__()
-
+		
+		# inPath		: path of dataset to train
+		# outPath		: path of model to save or load
+		
 		self.inPath = inPath
 		self.outPath = outPath
 		self.dataNum = dataNum
@@ -280,7 +277,7 @@ class PresidentSing(nn.Module):
 
 	def save(self, outPath, prefix = '', option = 'param'):
 
-		timeText = timeNow()
+		timeText = util.getTime()
 
 		if not prefix == '':
 

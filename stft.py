@@ -6,11 +6,7 @@ import librosa
 import argparse
 import numpy as np
 
-def divideList(target, size):
-
-	# divide given target list into sub list
-	# size of sub lists is 'size'
-	return [target[idx:idx + size] for idx in range(0, len(target), size)]
+import util
 
 def transformExtract(filePath, timeLength = 4, size = 100):
 
@@ -67,7 +63,7 @@ def transformAll(filePath, timeLength = 4):
 	#selected = audio
 
 	# STFT for divided audio
-	for window in divideList(selected, windowSize):
+	for window in util.divideList(selected, windowSize):
 
 		spectro = librosa.stft(window, n_fft = 2048, hop_length = 256, win_length = 1024)
 
