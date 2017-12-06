@@ -206,7 +206,12 @@ def main(inPath, outPath, mode = 'continuous'):
 
 	else:
 
-		print('Error : mode')
+		print('Error : Mode can be "continuous" or "extraction"')
+
+# Usage : python STFT.py <inPath> <outPath> <mode>
+#
+#         python STFT.py ./audios ./spectrograms continuous
+#         python STFT.py ./dataset ./processedDataset extraction
 
 if __name__ == '__main__':
 

@@ -141,7 +141,7 @@ class Discriminator(nn.Module):
 
 class PresidentSing(nn.Module):
 
-	def __init__(self, dataPath, dataNum):
+	def __init__(self, inPath, outPath, dataNum):
 
 		# encoder       : spectrogram (voice - any speaker) -> encoded voice code (neutral pitch, formant, tempo)
 		# decoderR 		: encoded voice code (neutral pitch, formant, tempo) -> spectrogram (voice - original)
@@ -149,7 +149,8 @@ class PresidentSing(nn.Module):
 		# discriminator : spectrogram (voice) -> true or false (if target then yes, else no)
 		super(PresidentSing, self).__init__()
 
-		self.dataPath = dataPath
+		self.inPath = inPath
+		self.outPath = outPath
 		self.dataNum = dataNum
 
 		if torch.cuda.is_available():
@@ -205,17 +206,13 @@ class PresidentSing(nn.Module):
 		self.lossCycle = nn.L1Loss()
 		self.lossGAN = nn.BCELoss()
 
-		dataSet = AudioLoader(self.dataPath, self.dataNum)
+		dataSet = AudioLoader(os.path.join(self.inPath, 'train'), self.dataNum)
 		trainLoader = data.DataLoader(
 
 			dataset = dataSet,
 			batch_size = numBatch,
 			shuffle = True
 		)
-
-		if not os.path.exists(os.path.join(os.getcwd(), 'models')):
-
-			os.makedirs(os.path.join(os.getcwd(), 'models'))
 
 		for epoch in range(numEpoch):
 
@@ -277,11 +274,11 @@ class PresidentSing(nn.Module):
 
 			print('Epoch ', str(epoch), ' finished')
 			print('Elapsed time : ', str(timeNow = timeit.default_timer() - timeNow))
-			self.save(os.path.join(os.getcwd(), 'models'), 'epoch' + str(epoch), option = 'all')
+			self.save(outPath, 'epoch' + str(epoch), option = 'all')
 
 		return history
 
-	def save(self, filePath, prefix = '', option = 'param'):
+	def save(self, outPath, prefix = '', option = 'param'):
 
 		timeText = timeNow()
 
@@ -293,10 +290,10 @@ class PresidentSing(nn.Module):
 			
 			try:
 
-				torch.save(self.Enc, os.path.join(filePath, timeText + prefix + 'encoder.model'))
-				torch.save(self.DecTarget, os.path.join(filePath, timeText + prefix + 'decoder_target.model'))
-				torch.save(self.DecRecover, os.path.join(filePath, timeText + prefix + 'encoder_recover.model'))
-				torch.save(self.Dis, os.path.join(filePath, timeText + prefix + 'discriminator.model'))
+				torch.save(self.Enc, os.path.join(outPath, timeText + prefix + 'encoder.model'))
+				torch.save(self.DecTarget, os.path.join(outPath, timeText + prefix + 'decoder_target.model'))
+				torch.save(self.DecRecover, os.path.join(outPath, timeText + prefix + 'encoder_recover.model'))
+				torch.save(self.Dis, os.path.join(outPath, timeText + prefix + 'discriminator.model'))
 
 			except:
 
@@ -313,10 +310,10 @@ class PresidentSing(nn.Module):
 
 			try:
 
-				torch.save(self.Enc.state_dict(), os.path.join(filePath, timeText + prefix + 'encoder.param'))
-				torch.save(self.DecTarget.state_dict(), os.path.join(filePath, timeText + prefix + 'decoder_target.param'))
-				torch.save(self.DecRecover.state_dict(), os.path.join(filePath, timeText + prefix + 'encoder_recover.param'))
-				torch.save(self.Dis.state_dict(), os.path.join(filePath, timeText + prefix + 'discriminator.param'))
+				torch.save(self.Enc.state_dict(), os.path.join(outPath, timeText + prefix + 'encoder.param'))
+				torch.save(self.DecTarget.state_dict(), os.path.join(outPath, timeText + prefix + 'decoder_target.param'))
+				torch.save(self.DecRecover.state_dict(), os.path.join(outPath, timeText + prefix + 'encoder_recover.param'))
+				torch.save(self.Dis.state_dict(), os.path.join(outPath, timeText + prefix + 'discriminator.param'))
 
 			except:
 
@@ -330,7 +327,7 @@ class PresidentSing(nn.Module):
 
 			print('error : invalid mode')
 
-	def load(self, filePath, prefix = '', time = '', option = 'param'):
+	def load(self, inPath, prefix = '', time = '', option = 'param'):
 
 		if not prefix == '':
 
@@ -341,14 +338,14 @@ class PresidentSing(nn.Module):
 			try:
 
 				# load the model files which are created lastly
-				files = os.listdir(os.path.join(os.getcwd(), 'models'))
+				files = os.listdir(inPath)
 				files.sort(reverse = True)
 				textTime = files[0][:10] + '_'
 
-				self.Enc = torch.load(os.path.join(filePath, timeText + prefix + 'encoder.model'))
-				self.DecTarget = torch.load(os.path.join(filePath, timeText + prefix + 'decoder_target.model'))
-				self.DecRecover = torch.load(os.path.join(filePath, timeText + prefix + 'encoder_recover.model'))
-				self.Dis = torch.load(os.path.join(filePath, timeText + prefix + 'discriminator.model'))
+				self.Enc = torch.load(os.path.join(inPath, timeText + prefix + 'encoder.model'))
+				self.DecTarget = torch.load(os.path.join(inPath, timeText + prefix + 'decoder_target.model'))
+				self.DecRecover = torch.load(os.path.join(inPath, timeText + prefix + 'encoder_recover.model'))
+				self.Dis = torch.load(os.path.join(inPath, timeText + prefix + 'discriminator.model'))
 
 			except:
 
@@ -365,7 +362,7 @@ class PresidentSing(nn.Module):
 
 			try:
 
-				self.Enc.load_state_dict(torch.load(path))
+				self.Enc.load_state_dict(torch.load(inPath))
 
 			except:
 
