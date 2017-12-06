@@ -139,7 +139,7 @@ class Discriminator(nn.Module):
 
 		return y
 
-class PresidentSing():
+class PresidentSing(nn.Module):
 
 	def __init__(self, dataPath, dataNum):
 
