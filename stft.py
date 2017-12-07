@@ -38,9 +38,9 @@ def transformExtract(filePath, timeLength = 3, size = 100):
 		# need padding last window, make shape (1025, 801)
 		if spectro.shape[1] < 601:
 
-			spectro = np.lib.pad(spectro, ((0, 0), (0, 601 - spectro.shape[1])), 'constant', constant_values = 0.0)
+			spectro = np.lib.pad(spectro, ((0, 0), (0, 601 - spectro.shape[1])), 'constant', constant_values = 1e-13)
 
-		result.append(np.log10(np.abs(spectro)))
+		result.append(np.log10(np.abs(spectro) + 1e-13))
 
 	# return STFT to train, val, test set
 	return result[: int(size * 0.6)], result[int(size * 0.6) : int(size * 0.8)], result[int(size * 0.8):]
@@ -72,9 +72,9 @@ def transformAll(filePath, timeLength = 3):
 		# need padding last window, make shape (513, 601)
 		if spectro.shape[1] < 601:
 
-			spectro = np.lib.pad(spectro, ((0, 0), (0, 601 - spectro.shape[1])), 'constant', constant_values = 0.0)
+			spectro = np.lib.pad(spectro, ((0, 0), (0, 601 - spectro.shape[1])), 'constant', constant_values = 1e-13)
 
-		result.append(np.log10(np.abs(spectro)))
+		result.append(np.log10(np.abs(spectro) + 1e-13))
 		
 	return result
 
@@ -83,7 +83,7 @@ def normalizeSpectro(spectro):
 	mean = np.mean(spectro)
 	std = np.std(spectro)
 
-	normalized = (spectro - mean) / (std + 1e-7)
+	normalized = (spectro - mean) / (std + 1e-13)
 
 	return normalized, mean, std
 
@@ -102,7 +102,7 @@ def normalizeSpectroList(spectroList):
 def denormalizeSpectro(spectro, mean, std):
 
 	spectro = spectro.reshape(513, 601)
-	denormalized = (spectro * (std + 1e-7)) + mean
+	denormalized = (spectro * (std + 1e-13)) + mean
 
 	return denormalized
 
@@ -122,7 +122,7 @@ def griffinLim(spectro, iterN = 50):
 
 	# reference : https://github.com/andabi/deep-voice-conversion/blob/master/tools/audio_utils.py
 
-	spectro = np.power(10.0, spectro)
+	spectro = np.power(10.0, spectro - 1e-13)
 	phase = np.pi * np.random.rand(*spectro.shape)
 	spec = spectro * np.exp(1.0j * phase)
 
