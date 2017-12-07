@@ -52,8 +52,6 @@ def convertFile(convertModel, path):
 		audioList.append(convertedAudio)
 
 	audio = stft.concatAudio(audioList)
-	audio = audio / np.max(audio) * 32760.0
-	audio = audio.astype(int)
 	
 	dirName = os.path.dirname(path)
 	fileName = 'converted_' + os.path.basename(path)
