@@ -81,7 +81,7 @@ def main(path, modelPath, mode):
 		print('Train ended')
 		print('Elapsed time : ', timeit.default_timer() - timeNow)
 
-		util.plotLossHistory(lossHistory, modelPath)
+		#util.plotLossHistory(lossHistory, modelPath)
 
 	elif mode == 'trainC':
 
