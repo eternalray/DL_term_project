@@ -12,7 +12,7 @@ from torch.autograd import Variable
 import numpy as np
 
 import util
-import STFT
+import stft
 
 class Flatten(nn.Module):
 
@@ -46,10 +46,10 @@ class AudioLoader(torchData.Dataset):
 		with open(os.path.join(self.inPath, self.fileList[idx]), 'rb') as fs:
 
 			data = pickle.load(fs)
-			data, mean, std = normalizeSpectro(data)
+			data, mean, std = stft.normalizeSpectro(data)
 			data = torch.from_numpy(data)
-			mean = torch.from_numpy(mean)
-			std = torch.from_numpy(std)
+			mean = torch.from_numpy(np.array([mean]))
+			std = torch.from_numpy(np.array([std]))
 
 		if self.target in self.fileList[idx]:
 
@@ -116,8 +116,8 @@ class Decoder(nn.Module):
 			nn.ConvTranspose2d(96, 64, 5, stride = 3, padding = 1),				# (171, 201, 64)
 			nn.BatchNorm2d(64),
 			nn.LeakyReLU(negative_slope = 0.05, inplace = True),
-			nn.ConvTranspose2d(64, 32, 5, stride = 3, padding = 1),				# (513, 601, 32)
-			nn.BatchNorm2d(96),
+			nn.ConvTranspose2d(64, 32, 5, stride = 3, padding = (1, 2)),				# (513, 601, 32)
+			nn.BatchNorm2d(32),
 			nn.LeakyReLU(negative_slope = 0.05, inplace = True),
 			nn.ConvTranspose2d(32, 1, 1, stride = 1, padding = 0),				# (513, 601, 1)
 			nn.Tanh()
@@ -146,7 +146,7 @@ class Discriminator(nn.Module):
 			nn.Conv2d(64, 96, 5, stride = 3, padding = (1, 2)),					# (19, 23, 96)
 			nn.BatchNorm2d(96),
 			nn.ReLU(inplace = True),
-			nn.Conv2d(96, 16, 1, stride = 1, padding = 0)						# (19, 23, 16)
+			nn.Conv2d(96, 16, 1, stride = 1, padding = 0),						# (19, 23, 16)
 			nn.BatchNorm2d(16),
 			nn.ReLU(inplace = True),
 			Flatten(),															# (19 * 23 * 16)
@@ -229,7 +229,7 @@ class PresidentSing(nn.Module):
 
 		return z.data, xT.data
 
-	def train(self, learningRate = 1e-4, numEpoch = 10, numBatch = 4):
+	def train(self, learningRate = 1e-5, numEpoch = 10, numBatch = 8):
 
 		history = list()
 
@@ -264,7 +264,7 @@ class PresidentSing(nn.Module):
 				x = Variable(x)
 				y = Variable(y.type(torch.cuda.FloatTensor), requires_grad = False)
 
-				x = x.view(numBatch, 1, 1025, 801)
+				x = x.view(numBatch, 1, 513, 601)
 
 				self.optEncoder.zero_grad()
 				self.optDecoderR.zero_grad()
@@ -298,7 +298,7 @@ class PresidentSing(nn.Module):
 				# forward pass 2
 				pX = self.discriminator.forward(x)
 				pT = self.discriminator.forward(xT)
-				one = Variable(torch.Tensor([1.0])).cuda().expand(pX.size(), requires_grad = False)
+				one = Variable(torch.Tensor([1.0]), requires_grad = False).cuda().expand(pX.size())
 
 				# index 0 : Real / Fake
 				# index 1 : Target / Otherwise
@@ -325,7 +325,7 @@ class PresidentSing(nn.Module):
 				history.append((epoch, idx, lossHistory))
 
 			print('Epoch ', str(epoch), ' finished')
-			print('Elapsed time : ', str(timeNow = timeit.default_timer() - timeNow))
+			print('Elapsed time : ', str(timeit.default_timer() - timeNow))
 			self.save(outPath, 'epoch' + str(epoch), option = 'all')
 
 		return history

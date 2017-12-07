@@ -27,6 +27,9 @@ def transformExtract(filePath, timeLength = 3, size = 100):
 	# select random point of audio
 	selected = np.random.randint(start, end, size = size)
 
+	# normalize amplitude
+	audio = audio / 32760.0
+
 	# STFT for selected and divided audio
 	for idx in selected:
 
@@ -55,6 +58,9 @@ def transformAll(filePath, timeLength = 3):
 	start = int(audio.shape[0] * 0.1)
 	end = int(audio.shape[0] * 0.9)
 	windowSize = timeLength * rate
+
+	# normalize amplitude
+	audio = audio / 32760.0
 
 	# use 80% of audio
 	selected = audio[start : end]

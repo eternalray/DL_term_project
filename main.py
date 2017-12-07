@@ -3,7 +3,7 @@ import sys
 import timeit
 import argparse
 
-import STFT
+import stft
 import util
 from model import PresidentSing
 
@@ -49,6 +49,7 @@ def convertFile(convertModel, path):
 		audioList.append(convertedAudio)
 
 	audio = STFT.concatAudio(audioList)
+	audio = audio / np.max(audio) * 32760.0
 	
 	dirName = os.path.dirname(path)
 	fileName = 'converted_' + os.path.basename(path)
