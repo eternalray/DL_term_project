@@ -122,7 +122,6 @@ class Decoder(nn.Module):
 			nn.BatchNorm2d(32),
 			nn.LeakyReLU(negative_slope = 0.05, inplace = True),
 			nn.ConvTranspose2d(32, 1, 1, stride = 1, padding = 0),				# (513, 601, 1)
-			nn.Tanh()
 		)
 
 	def forward(self, x):
@@ -224,7 +223,7 @@ class PresidentSing(nn.Module):
 		x = torch.from_numpy(x)
 		x = Variable(x, requires_grad = False)
 		x = x.contiguous()
-		x = x.view(numBatch, 1, 513, 601)
+		x = x.view(1, 1, 513, 601)
 
 		if torch.cuda.is_available():
 
@@ -240,7 +239,7 @@ class PresidentSing(nn.Module):
 
 		return z.data.numpy(), xT.data.numpy()
 
-	def train(self, learningRate = 1e-5, numEpoch = 10, numBatch = 8):
+	def train(self, learningRate = 1e-5, numEpoch = 10, numBatch = 32):
 
 		history = list()
 
@@ -338,6 +337,8 @@ class PresidentSing(nn.Module):
 			print('Epoch ', str(epoch), ' finished')
 			print('Elapsed time : ', str(timeit.default_timer() - timeNow))
 			self.save(self.outPath, 'epoch' + str(epoch), option = 'all')
+
+		self.save(self.outPath, 'epoch' + str(epoch), prefix = 'final', option = 'all')
 
 		return history
 

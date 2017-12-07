@@ -7,8 +7,8 @@ import stft
 import util
 from model import PresidentSing
 
-import numpy as np
 import librosa
+import numpy as np
 
 # Usage : python main.py <inPath> <outPath> <mode>
 #
@@ -21,7 +21,7 @@ def convert(convertModel, path):
 
 		if os.path.splitext(path)[-1] == '.wav':
 
-			fileName, _ = convertFile(convertModel, path)
+			fileName, audio = convertFile(convertModel, path)
 
 	elif os.path.isdir(path):
 
@@ -31,13 +31,13 @@ def convert(convertModel, path):
 
 				if os.path.splitext(f)[-1] == '.wav':
 
-					fileName, _ = convertFile(convertModel, os.path.join(ps, f))
+					fileName, audio = convertFile(convertModel, os.path.join(ps, f))
 
 	else:
 
 		print('Error : Given path is wrong')
 
-def convertFile(convertModel, path):
+def convertFile(convertModel, path, show = False):
 
 	audioList = list()
 
@@ -57,6 +57,13 @@ def convertFile(convertModel, path):
 	fileName = 'converted_' + os.path.basename(path)
 	librosa.output.write_wav(os.path.join(dirName, fileName), audio, sr = 51200)
 	print('Output : ', fileName)
+
+	if show:
+
+		original, _ = librosa.load(path, mono = True, sr = 51200)
+		
+		showSpectrogram(original)
+		showSpectrogram(audio)
 
 	return fileName, audio
 
@@ -92,7 +99,7 @@ def main(path, modelPath, mode):
 
 	elif mode == 'convert':
 
-		convertModel.load(modelPath)
+		convertModel.load(modelPath, prefix = 'final')
 
 		print('Convert started')
 		timeNow = timeit.default_timer()

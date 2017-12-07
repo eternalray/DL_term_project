@@ -3,12 +3,12 @@ import sys
 import pickle
 import timeit
 import librosa
+import librosa.display
 import argparse
 import numpy as np
+import matplotlib.pyplot as plt
 
 import util
-import matplotlib.pyplot as plt
-import librosa.display
 
 def transformExtract(filePath, timeLength = 3, size = 100):
 
@@ -137,6 +137,12 @@ def griffinLim(spectro, iterN = 50):
 			spec = spectro * np.exp(1.0j * np.angle(phase))
 
 	return audio
+
+def showSpectrogram(audio):
+
+	spectro = librosa.stft(audio, n_fft = 1024, hop_length = 256, win_length = 1024)
+	librosa.display.showspec(spectro)
+	plt.show()
 
 def concatAudio(dataList, dtype = 'audio'):
 
