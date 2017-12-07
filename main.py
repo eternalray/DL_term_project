@@ -7,6 +7,9 @@ import stft
 import util
 from model import PresidentSing
 
+import numpy as np
+import librosa
+
 # Usage : python main.py <inPath> <outPath> <mode>
 #
 #         python main.py ./audios ./model convert
@@ -38,22 +41,23 @@ def convertFile(convertModel, path):
 
 	audioList = list()
 
-	spectroList = STFT.transformAll(path)
-	normalizedList = STFT.normalizeSpectroList(spectroList)
+	spectroList = stft.transformAll(path)
+	normalizedList = stft.normalizeSpectroList(spectroList)
 
 	for normalized, mean, std in normalizedList:
 
 		_, converted = convertModel.convert(normalized)
-		converted = denormalizeSpectro(converted, mean, std)
-		convertedAudio = STFT.griffinLim(converted)
+		converted = stft.denormalizeSpectro(converted, mean, std)
+		convertedAudio = stft.griffinLim(converted)
 		audioList.append(convertedAudio)
 
-	audio = STFT.concatAudio(audioList)
+	audio = stft.concatAudio(audioList)
 	audio = audio / np.max(audio) * 32760.0
+	audio = audio.astype(int)
 	
 	dirName = os.path.dirname(path)
 	fileName = 'converted_' + os.path.basename(path)
-	librosa.output.write_wav(os.path.join(dirName, fileName, audio, sr = 51200))
+	librosa.output.write_wav(os.path.join(dirName, fileName), audio, sr = 51200)
 	print('Output : ', fileName)
 
 	return fileName, audio
@@ -63,6 +67,20 @@ def main(path, modelPath, mode):
 	convertModel = PresidentSing(path, modelPath, 1024)
 
 	if mode == 'train':
+
+		print('Train started')
+		timeNow = timeit.default_timer()
+		
+		lossHistory = convertModel.train()
+
+		print('Train ended')
+		print('Elapsed time : ', timeit.default_timer() - timeNow)
+
+		util.plotLossHistory(lossHistory, modelPath)
+
+	elif mode == 'trainC':
+
+		convertModel.load(modelPath)
 
 		print('Train started')
 		timeNow = timeit.default_timer()
@@ -95,7 +113,7 @@ if __name__ == '__main__':
 	parser = argparse.ArgumentParser() 
 	parser.add_argument('path', help = 'Path 1 : train - dataset directory, convert - input / output directory')
 	parser.add_argument('modelPath', help = 'Path 2 : model directory')
-	parser.add_argument('mode', help = 'Mode option : <train> or <convert>')
+	parser.add_argument('mode', help = 'Mode option : <train>, <convert>, or <trainC>')
 	args = parser.parse_args()
 	
 	main(args.path, args.modelPath, args.mode)

@@ -87,7 +87,7 @@ def normalizeSpectro(spectro):
 	mean = np.mean(spectro)
 	std = np.std(spectro)
 
-	normalized = (spectro - mean) / std
+	normalized = (spectro - mean) / (std + 1e-7)
 
 	return normalized, mean, std
 
@@ -105,7 +105,8 @@ def normalizeSpectroList(spectroList):
 
 def denormalizeSpectro(spectro, mean, std):
 
-	denormalized = (spectro * std) + mean
+	spectro = spectro.reshape(513, 601)
+	denormalized = (spectro * std + (1e-7)) + mean
 
 	return denormalized
 
