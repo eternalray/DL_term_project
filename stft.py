@@ -141,7 +141,7 @@ def griffinLim(spectro, iterN = 50):
 def showSpectrogram(audio):
 
 	spectro = librosa.stft(audio, n_fft = 1024, hop_length = 256, win_length = 1024)
-	librosa.display.showspec(spectro)
+	librosa.display.specshow(spectro)
 	plt.show()
 
 def concatAudio(dataList, dtype = 'audio'):
@@ -249,9 +249,20 @@ def main(inPath, outPath, mode = 'continuous'):
 
 						continue
 
+	elif: mode == 'show':
+
+		for path, dirs, files in os.walk(inPath):
+
+			for f in files:
+
+				if os.path.splitext(f)[-1] == '.wav':
+
+					audio, rate = librosa.load(filePath, mono = True, sr = 51200)
+					showSpectrogram(audio)
+
 	else:
 
-		print('Error : Mode can be "continuous" or "extraction"')
+		print('Error : Mode can be "continuous", "extraction" or "show"')
 
 # Usage : python STFT.py <inPath> <outPath> <mode>
 #
@@ -263,7 +274,7 @@ if __name__ == '__main__':
 	parser = argparse.ArgumentParser()
 	parser.add_argument('inPath', help = 'input path of wav file or directory')
 	parser.add_argument('outPath', help = 'input path of wav file or directory')
-	parser.add_argument('mode', help = 'continous or extraction')
+	parser.add_argument('mode', help = 'continous, extraction, show')
 	
 	args = parser.parse_args()
 	

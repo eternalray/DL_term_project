@@ -230,14 +230,16 @@ class PresidentSing(nn.Module):
 			x = x.cuda()
 
 		z = self.encoder.forward(x)
+		xR = self.decoderR.forward(z)
 		xT = self.decoderT.forward(z)
 
 		if torch.cuda.is_available():
 
 			z = z.cpu()
+			xR = xR.cpu()
 			xT = xT.cpu()
 
-		return z.data.numpy(), xT.data.numpy()
+		return z.data.numpy(), xR.data.numpy(), xT.data.numpy()
 
 	def train(self, learningRate = 1e-5, numEpoch = 10, numBatch = 32):
 
@@ -262,6 +264,7 @@ class PresidentSing(nn.Module):
 
 		for epoch in range(numEpoch):
 
+			print('Epoch ', str(epoch), ' started')
 			timeNow = timeit.default_timer()
 
 			for idx, data in enumerate(trainLoader, 0):
@@ -299,11 +302,19 @@ class PresidentSing(nn.Module):
 				lossHistory.append(loss.data[0])
 				self.optDecoderR.step()
 
+				if idx % 50 == 0:
+
+					print('loss - first phase : ', loss.data[0])
+
 				loss += torch.sum(torch.abs(z - zT)) / numBatch
 				#loss += self.lossCycle(z, zT)
 				loss.backward(retain_graph = True)
 				lossHistory.append(loss.data[0])
 				self.optEncoder.step()
+
+				if idx % 50 == 0:
+
+					print('loss - second phase : ', loss.data[0])
 
 				# forward pass 2
 				pX = self.discriminator.forward(x)
@@ -318,7 +329,7 @@ class PresidentSing(nn.Module):
 				loss -= torch.sum(torch.log(pX), 0)[0] / numBatch
 				loss -= torch.sum(y * torch.log(pX) + (one - y) * torch.log(one - pX), 0)[1] / numBatch
 				loss -= torch.sum(torch.log(pT), 0)[0] / numBatch
-				loss -= torch.sum(torch.log(pT), 0)[1] / numBatch					# it can be a problem
+				#loss -= torch.sum(torch.log(pT), 0)[1] / numBatch					# it can be a problem
 				#loss += self.lossGAN(pX[0], 1)
 				#loss += self.lossGAN(pX[1], y)
 				#loss += self.lossGAN(pT[0], 0)
@@ -330,15 +341,17 @@ class PresidentSing(nn.Module):
 
 				if idx % 50 == 0:
 
-					print(loss.data[0])
+					print('loss - third phase : ', loss.data[0])
+					print('')
 
 				history.append((epoch, idx, lossHistory))
 
 			print('Epoch ', str(epoch), ' finished')
 			print('Elapsed time : ', str(timeit.default_timer() - timeNow))
 			self.save(self.outPath, 'epoch' + str(epoch), option = 'all')
+			print('')
 
-		self.save(self.outPath, 'epoch' + str(epoch), prefix = 'final', option = 'all')
+		self.save(self.outPath, 'final', option = 'all')
 
 		return history
 

@@ -46,7 +46,7 @@ def convertFile(convertModel, path, show = False):
 
 	for normalized, mean, std in normalizedList:
 
-		_, converted = convertModel.convert(normalized)
+		_, _, converted = convertModel.convert(normalized)
 		converted = stft.denormalizeSpectro(converted, mean, std)
 		convertedAudio = stft.griffinLim(converted)
 		audioList.append(convertedAudio)
@@ -62,8 +62,8 @@ def convertFile(convertModel, path, show = False):
 
 		original, _ = librosa.load(path, mono = True, sr = 51200)
 		
-		showSpectrogram(original)
-		showSpectrogram(audio)
+		stft.showSpectrogram(original)
+		stft.showSpectrogram(audio)
 
 	return fileName, audio
 
