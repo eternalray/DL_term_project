@@ -249,7 +249,7 @@ def main(inPath, outPath, mode = 'continuous'):
 
 						continue
 
-	elif: mode == 'show':
+	elif mode == 'show':
 
 		for path, dirs, files in os.walk(inPath):
 

@@ -15,13 +15,13 @@ import numpy as np
 #         python main.py ./audios ./model convert
 #         python main.py ./dataset ./model train
 
-def convert(convertModel, path):
+def convert(convertModel, path, mode = 'target'):
 
 	if os.path.isfile(path):
 
 		if os.path.splitext(path)[-1] == '.wav':
 
-			fileName, audio = convertFile(convertModel, path)
+			fileName, audio = convertFile(convertModel, path, mode)
 
 	elif os.path.isdir(path):
 
@@ -31,13 +31,13 @@ def convert(convertModel, path):
 
 				if os.path.splitext(f)[-1] == '.wav':
 
-					fileName, audio = convertFile(convertModel, os.path.join(ps, f))
+					fileName, audio = convertFile(convertModel, os.path.join(ps, f), mode)
 
 	else:
 
 		print('Error : Given path is wrong')
 
-def convertFile(convertModel, path, show = False):
+def convertFile(convertModel, path, mode = 'target', show = False):
 
 	audioList = list()
 
@@ -46,15 +46,27 @@ def convertFile(convertModel, path, show = False):
 
 	for normalized, mean, std in normalizedList:
 
-		_, _, converted = convertModel.convert(normalized)
+		if mode == 'target':
+
+			_, _, converted = convertModel.convert(normalized)
+			fileName = 'converted_target_' + os.path.basename(path)
+
+		elif mode == 'reconstruct':
+
+			_, converted, _ = convertModel.convert(normalized)
+			fileName = 'converted_reconstruct_' + os.path.basename(path)
+
+		else:
+
+			print('Mode can be "target" or "reconstruct"')
+
 		converted = stft.denormalizeSpectro(converted, mean, std)
 		convertedAudio = stft.griffinLim(converted)
 		audioList.append(convertedAudio)
 
 	audio = stft.concatAudio(audioList)
-	
 	dirName = os.path.dirname(path)
-	fileName = 'converted_' + os.path.basename(path)
+	
 	librosa.output.write_wav(os.path.join(dirName, fileName), audio, sr = 51200)
 	print('Output : ', fileName)
 
@@ -105,6 +117,7 @@ def main(path, modelPath, mode):
 		timeNow = timeit.default_timer()
 
 		convert(convertModel, path)
+		convert(convertModel, path, 'reconstruct')
 
 		print('Convert ended')
 		print('Elapsed time : ', timeit.default_timer() - timeNow)
