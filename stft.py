@@ -25,7 +25,7 @@ def transformExtract(filePath, timeLength = 3, size = 100):
 	assert end > start + windowSize and audio.shape[0] > end + windowSize, 'Audio is too short!'
 
 	# select random point of audio
-	selected = numpy.random.randint(start, end, size = size)
+	selected = np.random.randint(start, end, size = size)
 
 	# STFT for selected and divided audio
 	for idx in selected:
