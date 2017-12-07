@@ -8,7 +8,7 @@ import numpy as np
 
 import util
 
-def transformExtract(filePath, timeLength = 4, size = 100):
+def transformExtract(filePath, timeLength = 3, size = 100):
 
 	result = list()
 
@@ -31,19 +31,19 @@ def transformExtract(filePath, timeLength = 4, size = 100):
 	for idx in selected:
 
 		window = audio[idx : idx + windowSize]
-		spectro = librosa.stft(window, n_fft = 2048, hop_length = 256, win_length = 1024)
+		spectro = librosa.stft(window, n_fft = 1024, hop_length = 256, win_length = 1024)
 
 		# need padding last window, make shape (1025, 801)
-		if spectro.shape[1] < 801:
+		if spectro.shape[1] < 601:
 
-			spectro = np.lib.pad(spectro, ((0, 0), (0, 801 - spectro.shape[1])), 'constant', constant_values = 0.0)
+			spectro = np.lib.pad(spectro, ((0, 0), (0, 601 - spectro.shape[1])), 'constant', constant_values = 0.0)
 
 		result.append(np.abs(spectro))
 
 	# return STFT to train, val, test set
 	return result[: int(size * 0.6)], result[int(size * 0.6) : int(size * 0.8)], result[int(size * 0.8):]
 
-def transformAll(filePath, timeLength = 4):
+def transformAll(filePath, timeLength = 3):
 
 	result = list()
 
@@ -65,16 +65,55 @@ def transformAll(filePath, timeLength = 4):
 	# STFT for divided audio
 	for window in util.divideList(selected, windowSize):
 
-		spectro = librosa.stft(window, n_fft = 2048, hop_length = 256, win_length = 1024)
+		spectro = librosa.stft(window, n_fft = 1024, hop_length = 256, win_length = 1024)
 
-		# need padding last window, make shape (1025, 801)
-		if spectro.shape[1] < 801:
+		# need padding last window, make shape (513, 601)
+		if spectro.shape[1] < 601:
 
-			spectro = np.lib.pad(spectro, ((0, 0), (0, 801 - spectro.shape[1])), 'constant', constant_values = 0.0)
+			spectro = np.lib.pad(spectro, ((0, 0), (0, 601 - spectro.shape[1])), 'constant', constant_values = 0.0)
 
 		result.append(np.abs(spectro))
 		
 	return result
+
+def normalizeSpectro(spectro):
+
+	mean = np.mean(spectro)
+	std = np.std(spectro)
+
+	normalized = (spectro - mean) / std
+
+	return normalized, mean, std
+
+def normalizeSpectroList(spectroList):
+
+	normalizedList = list()
+
+	for spectro in spectroList:
+
+		normalized, mean, std = normalizeSpectro(spectro)
+
+		normalizedList.append((normalized, mean, std))
+
+	return normalizedList
+
+def denormalizeSpectro(spectro, mean, std):
+
+	denormalized = (spectro * std) + mean
+
+	return denormalized
+
+def denormalizeSpectroList(normalizedList):
+
+	denormalizedList = list()
+
+	for normalized, mean, std in normalizedList:
+
+		denormalized = normalizeSpectro(normalized, mean, std)
+
+		normalizedList.append(denormalized)
+
+	return denormalizedList
 
 def griffinLim(spectro, iterN = 50):
 
@@ -85,11 +124,11 @@ def griffinLim(spectro, iterN = 50):
 
 	for i in range(iterN):
 
-		audio = librosa.istft(spec, hop_length = 256, win_length = 1024, length = 204800)
+		audio = librosa.istft(spec, hop_length = 256, win_length = 1024, length = 153600)
 
 		if i < iterN - 1:
 
-			spec = librosa.stft(audio, n_fft = 2048, hop_length = 256, win_length = 1024)
+			spec = librosa.stft(audio, n_fft = 1024, hop_length = 256, win_length = 1024)
 			_, phase = librosa.magphase(spec)
 			spec = spectro * np.exp(1.0j * np.angle(phase))
 

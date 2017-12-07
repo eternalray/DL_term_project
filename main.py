@@ -39,10 +39,12 @@ def convertFile(convertModel, path):
 	audioList = list()
 
 	spectroList = STFT.transformAll(path)
+	normalizedList = STFT.normalizeSpectroList(spectroList)
 
-	for spectro in spectroList:
+	for normalized, mean, std in normalizedList:
 
-		_, converted = convertModel.convert(spectro)
+		_, converted = convertModel.convert(normalized)
+		converted = denormalizeSpectro(converted, mean, std)
 		convertedAudio = STFT.griffinLim(converted)
 		audioList.append(convertedAudio)
 

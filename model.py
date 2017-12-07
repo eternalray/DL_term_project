@@ -12,6 +12,7 @@ from torch.autograd import Variable
 import numpy as np
 
 import util
+import STFT
 
 class Flatten(nn.Module):
 
@@ -44,7 +45,11 @@ class AudioLoader(torchData.Dataset):
 
 		with open(os.path.join(self.inPath, self.fileList[idx]), 'rb') as fs:
 
-			data = torch.from_numpy(pickle.load(fs))
+			data = pickle.load(fs)
+			data, mean, std = normalizeSpectro(data)
+			data = torch.from_numpy(data)
+			mean = torch.from_numpy(mean)
+			std = torch.from_numpy(std)
 
 		if self.target in self.fileList[idx]:
 
@@ -59,9 +64,11 @@ class AudioLoader(torchData.Dataset):
 		if torch.cuda.is_available():
 
 			data = data.cuda()
+			mean = mean.cuda()
+			std = std.cuda()
 			label = label.cuda()
 
-		return data, label
+		return data, mean, std, label
 
 	def __len__(self):
 
@@ -73,21 +80,20 @@ class Encoder(nn.Module):
 
 		super(Encoder, self).__init__()
 		
-		# input matrix (1025, 801) : frequency * time
+		# input matrix (513, 601) : frequency * time
 
 		self.model = nn.Sequential(
 
-			nn.Conv2d(1, 32, 3, stride = 1, padding = 1),					# (1025, 801, 32)
+			nn.Conv2d(1, 32, 5, stride = 3, padding = 2),						# (171, 201, 32)
 			nn.BatchNorm2d(32),
-			nn.ReLU(True),
-			nn.Conv2d(32, 64, 5, stride = 3, padding = 1),					# (341, 267, 64)
+			nn.ReLU(inplace = True),
+			nn.Conv2d(32, 64, 5, stride = 3, padding = 1),						# (57, 67, 64)
 			nn.BatchNorm2d(64),
-			nn.ReLU(True),
-			nn.Conv2d(64, 96, 5, stride = 3, padding = (0, 1)),				# (113, 89, 96)
+			nn.ReLU(inplace = True),
+			nn.Conv2d(64, 96, 5, stride = 3, padding = (1, 2)),					# (19, 23, 96)
 			nn.BatchNorm2d(96),
-			nn.ReLU(True),
-			nn.Conv2d(96, 1, 1, stride = 1, padding = 0),					# (113, 89, 1)
-			nn.Tanh()
+			nn.ReLU(inplace = True),
+			nn.Conv2d(96, 1, 1, stride = 1, padding = 0)						# (19, 23, 1)
 		)
 
 	def forward(self, x):
@@ -104,18 +110,17 @@ class Decoder(nn.Module):
 
 		self.model = nn.Sequential(
 
-			nn.ConvTranspose2d(1, 96, 3, stride = 1, padding = 1),			# (113, 89, 96)
+			nn.ConvTranspose2d(1, 96, 5, stride = 3, padding = (1, 2)),			# (57, 67, 96)
 			nn.BatchNorm2d(96),
-			nn.ReLU(True), 
-			nn.ConvTranspose2d(96, 64, 5, stride = 3, padding = (0, 1)),	# (341, 267, 64)
+			nn.LeakyReLU(negative_slope = 0.05, inplace = True),
+			nn.ConvTranspose2d(96, 64, 5, stride = 3, padding = 1),				# (171, 201, 64)
 			nn.BatchNorm2d(64),
-			nn.ReLU(True),
-			nn.ConvTranspose2d(64, 32, 5, stride = 3, padding = (0,1)),		# (1025, 801, 32)
-			nn.BatchNorm2d(32),
-			nn.ReLU(True),
-			nn.ConvTranspose2d(32, 1, 1, stride = 1, padding = 0),			# (1025, 801, 1)
-			nn.BatchNorm2d(1),
-			nn.ReLU(True)
+			nn.LeakyReLU(negative_slope = 0.05, inplace = True),
+			nn.ConvTranspose2d(64, 32, 5, stride = 3, padding = 1),				# (513, 601, 32)
+			nn.BatchNorm2d(96),
+			nn.LeakyReLU(negative_slope = 0.05, inplace = True),
+			nn.ConvTranspose2d(32, 1, 1, stride = 1, padding = 0),				# (513, 601, 1)
+			nn.Tanh()
 		)
 
 	def forward(self, x):
@@ -132,22 +137,24 @@ class Discriminator(nn.Module):
 
 		self.model = nn.Sequential(
 
-			nn.Conv2d(1, 32, 3, stride = 1, padding = 1),				# (1025, 801, 32)
+			nn.Conv2d(1, 32, 5, stride = 3, padding = 2),						# (171, 201, 32)
 			nn.BatchNorm2d(32),
-			nn.ReLU(True),
-			nn.Conv2d(32, 64, 5, stride = 3, padding = 1),				# (341, 267, 64)
+			nn.ReLU(inplace = True),
+			nn.Conv2d(32, 64, 5, stride = 3, padding = 1),						# (57, 67, 64)
 			nn.BatchNorm2d(64),
-			nn.ReLU(True),
-			nn.Conv2d(64, 96, 5, stride = 3, padding = (0, 1)),			# (113, 89, 96)
+			nn.ReLU(inplace = True),
+			nn.Conv2d(64, 96, 5, stride = 3, padding = (1, 2)),					# (19, 23, 96)
 			nn.BatchNorm2d(96),
+			nn.ReLU(inplace = True),
+			nn.Conv2d(96, 16, 1, stride = 1, padding = 0)						# (19, 23, 16)
+			nn.BatchNorm2d(16),
+			nn.ReLU(inplace = True),
+			Flatten(),															# (19 * 23 * 16)
+			nn.Linear(19 * 23 * 16, 4096, bias = True),							# (4096)
 			nn.ReLU(True),
-			nn.Conv2d(96, 1, 1, stride = 1, padding = 0),				# (113, 89, 1)
-			Flatten(),													# (113 * 89)
-			nn.Linear(113 * 89, 4096, bias = True),						# (4096)
+			nn.Linear(4096, 1024, bias = True),									# (1024)
 			nn.ReLU(True),
-			nn.Linear(4096, 1024, bias = True),							# (1024)
-			nn.ReLU(True),
-			nn.Linear(1024, 2, bias = True),							# (2)
+			nn.Linear(1024, 2, bias = True),									# (2)
 			nn.Sigmoid()
 		)			
 
@@ -253,7 +260,7 @@ class PresidentSing(nn.Module):
 				
 				# x : spectrogram
 				# y : label
-				x, y = data
+				x, mean, std, y = data
 				x = Variable(x)
 				y = Variable(y.type(torch.cuda.FloatTensor), requires_grad = False)
 
