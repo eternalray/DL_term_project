@@ -255,7 +255,7 @@ class PresidentSing(nn.Module):
 				# y : label
 				x, y = data
 				x = Variable(x)
-				y = Variable(y.type(torch.cuda.FloatTensor))
+				y = Variable(y.type(torch.cuda.FloatTensor), requires_grad = False)
 
 				x = x.view(numBatch, 1, 1025, 801)
 
@@ -291,7 +291,7 @@ class PresidentSing(nn.Module):
 				# forward pass 2
 				pX = self.discriminator.forward(x)
 				pT = self.discriminator.forward(xT)
-				one = Variable(torch.Tensor([1.0])).cuda().expand(pX.size())
+				one = Variable(torch.Tensor([1.0])).cuda().expand(pX.size(), requires_grad = False)
 
 				# index 0 : Real / Fake
 				# index 1 : Target / Otherwise
