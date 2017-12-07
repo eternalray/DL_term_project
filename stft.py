@@ -7,6 +7,8 @@ import argparse
 import numpy as np
 
 import util
+import matplotlib.pyplot as plt
+import librosa.display
 
 def transformExtract(filePath, timeLength = 3, size = 100):
 
@@ -27,9 +29,6 @@ def transformExtract(filePath, timeLength = 3, size = 100):
 	# select random point of audio
 	selected = np.random.randint(start, end, size = size)
 
-	# normalize amplitude
-	audio = audio / 32760.0
-
 	# STFT for selected and divided audio
 	for idx in selected:
 
@@ -41,7 +40,7 @@ def transformExtract(filePath, timeLength = 3, size = 100):
 
 			spectro = np.lib.pad(spectro, ((0, 0), (0, 601 - spectro.shape[1])), 'constant', constant_values = 0.0)
 
-		result.append(np.abs(spectro))
+		result.append(np.log10(np.abs(spectro)))
 
 	# return STFT to train, val, test set
 	return result[: int(size * 0.6)], result[int(size * 0.6) : int(size * 0.8)], result[int(size * 0.8):]
@@ -59,9 +58,6 @@ def transformAll(filePath, timeLength = 3):
 	end = int(audio.shape[0] * 0.9)
 	windowSize = timeLength * rate
 
-	# normalize amplitude
-	audio = audio / 32760.0
-
 	# use 80% of audio
 	selected = audio[start : end]
 
@@ -78,7 +74,7 @@ def transformAll(filePath, timeLength = 3):
 
 			spectro = np.lib.pad(spectro, ((0, 0), (0, 601 - spectro.shape[1])), 'constant', constant_values = 0.0)
 
-		result.append(np.abs(spectro))
+		result.append(np.log10(np.abs(spectro)))
 		
 	return result
 
@@ -106,7 +102,7 @@ def normalizeSpectroList(spectroList):
 def denormalizeSpectro(spectro, mean, std):
 
 	spectro = spectro.reshape(513, 601)
-	denormalized = (spectro * std + (1e-7)) + mean
+	denormalized = (spectro * (std + 1e-7)) + mean
 
 	return denormalized
 
@@ -126,6 +122,7 @@ def griffinLim(spectro, iterN = 50):
 
 	# reference : https://github.com/andabi/deep-voice-conversion/blob/master/tools/audio_utils.py
 
+	spectro = np.power(10.0, spectro)
 	phase = np.pi * np.random.rand(*spectro.shape)
 	spec = spectro * np.exp(1.0j * phase)
 
