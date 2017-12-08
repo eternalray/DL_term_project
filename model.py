@@ -50,8 +50,7 @@ class AudioLoader(torchData.Dataset):
 			maximum = np.max(data)
 			data = data / maximum
 
-			data, mean, std = stft.normalizeSpectro(data)
-			bak = data
+			#data, mean, std = stft.normalizeSpectro(data)
 			data = torch.from_numpy(data)
 			mean = torch.from_numpy(np.array([mean]))
 			std = torch.from_numpy(np.array([std]))
@@ -69,11 +68,12 @@ class AudioLoader(torchData.Dataset):
 		if torch.cuda.is_available():
 
 			data = data.cuda()
-			mean = mean.cuda()
-			std = std.cuda()
+			#mean = mean.cuda()
+			#std = std.cuda()
 			label = label.cuda()
 
-		return data, mean, std, label
+		#return data, mean, std, label
+		return data, label
 
 	def __len__(self):
 
@@ -278,7 +278,8 @@ class PresidentSing(nn.Module):
 				
 				# x : spectrogram
 				# y : label
-				x, mean, std, y = data
+				#x, mean, std, y = data
+				x, y = data
 				x = Variable(x)
 				y = Variable(y.type(torch.cuda.FloatTensor), requires_grad = False)
 

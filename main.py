@@ -42,9 +42,10 @@ def convertFile(convertModel, path, mode = 'target', show = False):
 	audioList = list()
 
 	spectroList = stft.transformAll(path)
-	normalizedList = stft.normalizeSpectroList(spectroList)
+	#normalizedList = stft.normalizeSpectroList(spectroList)
 
-	for normalized, mean, std in normalizedList:
+	#for normalized, mean, std in normalizedList:
+	for normalized in normalizedList:
 
 		if mode == 'target':
 
@@ -60,7 +61,7 @@ def convertFile(convertModel, path, mode = 'target', show = False):
 
 			print('Mode can be "target" or "reconstruct"')
 
-		converted = stft.denormalizeSpectro(converted, mean, std)
+		#converted = stft.denormalizeSpectro(converted, mean, std)
 		convertedAudio = stft.griffinLim(converted)
 		audioList.append(convertedAudio)
 
