@@ -81,7 +81,7 @@ def convertFile(convertModel, path, mode = 'target', show = False):
 
 def main(path, modelPath, mode):
 
-	convertModel = PresidentSing(path, modelPath, 1024)
+	convertModel = PresidentSing(path, modelPath, 4096)
 
 	if mode == 'train':
 

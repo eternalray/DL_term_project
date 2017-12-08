@@ -55,7 +55,6 @@ class AudioLoader(torchData.Dataset):
 			data = torch.from_numpy(data)
 			mean = torch.from_numpy(np.array([mean]))
 			std = torch.from_numpy(np.array([std]))
-			maximum = torch.from_numpy(maximum)
 
 		if self.target in self.fileList[idx]:
 
@@ -73,9 +72,8 @@ class AudioLoader(torchData.Dataset):
 			mean = mean.cuda()
 			std = std.cuda()
 			label = label.cuda()
-			maximum = maximum.cuda()
 
-		return data, mean, std, label, maximum
+		return data, mean, std, label
 
 	def __len__(self):
 
@@ -280,7 +278,7 @@ class PresidentSing(nn.Module):
 				
 				# x : spectrogram
 				# y : label
-				x, mean, std, y, _ = data
+				x, mean, std, y = data
 				x = Variable(x)
 				y = Variable(y.type(torch.cuda.FloatTensor), requires_grad = False)
 
@@ -308,7 +306,7 @@ class PresidentSing(nn.Module):
 				#loss = self.lossReconstruct(x, xR)
 				loss.backward(retain_graph = True)
 				lossHistory.append(loss.data[0])
-				self.optDecoderR.step()
+				#self.optDecoderR.step()
 
 				if idx % 50 == 0:
 
@@ -318,7 +316,7 @@ class PresidentSing(nn.Module):
 				#loss += self.lossCycle(z, zT)
 				loss.backward(retain_graph = True)
 				lossHistory.append(loss.data[0])
-				self.optEncoder.step()
+				#self.optEncoder.step()
 
 				if idx % 50 == 0:
 
