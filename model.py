@@ -46,12 +46,16 @@ class AudioLoader(torchData.Dataset):
 		with open(os.path.join(self.inPath, self.fileList[idx]), 'rb') as fs:
 
 			data = pickle.load(fs)
+			data = np.power(10.0, data - 1e-13)
+			maximum = np.max(data)
+			data = data / maximum
 
 			data, mean, std = stft.normalizeSpectro(data)
 			bak = data
 			data = torch.from_numpy(data)
 			mean = torch.from_numpy(np.array([mean]))
 			std = torch.from_numpy(np.array([std]))
+			maximum = torch.from_numpy(maximum)
 
 		if self.target in self.fileList[idx]:
 
@@ -69,8 +73,9 @@ class AudioLoader(torchData.Dataset):
 			mean = mean.cuda()
 			std = std.cuda()
 			label = label.cuda()
+			maximum = maximum.cuda()
 
-		return data, mean, std, label
+		return data, mean, std, label, maximum
 
 	def __len__(self):
 
@@ -118,7 +123,7 @@ class Decoder(nn.Module):
 			nn.ConvTranspose2d(96, 64, 5, stride = 3, padding = 1),				# (171, 201, 64)
 			nn.BatchNorm2d(64),
 			nn.LeakyReLU(negative_slope = 0.05, inplace = True),
-			nn.ConvTranspose2d(64, 32, 5, stride = 3, padding = (1, 2)),				# (513, 601, 32)
+			nn.ConvTranspose2d(64, 32, 5, stride = 3, padding = (1, 2)),		# (513, 601, 32)
 			nn.BatchNorm2d(32),
 			nn.LeakyReLU(negative_slope = 0.05, inplace = True),
 			nn.ConvTranspose2d(32, 1, 1, stride = 1, padding = 0),				# (513, 601, 1)
@@ -220,6 +225,8 @@ class PresidentSing(nn.Module):
 
 	def convert(self, x):
 
+		maximum = np.max(x)
+		x = x / maximum
 		x = torch.from_numpy(x)
 		x = Variable(x, requires_grad = False)
 		x = x.contiguous()
@@ -239,9 +246,9 @@ class PresidentSing(nn.Module):
 			xR = xR.cpu()
 			xT = xT.cpu()
 
-		return z.data.numpy(), xR.data.numpy(), xT.data.numpy()
+		return z.data.numpy(), xR.data.numpy() * maximum, xT.data.numpy() * maximum
 
-	def train(self, learningRate = 1e-5, numEpoch = 10, numBatch = 32):
+	def train(self, learningRate = 1e-5, numEpoch = 5, numBatch = 32):
 
 		history = list()
 
@@ -273,7 +280,7 @@ class PresidentSing(nn.Module):
 				
 				# x : spectrogram
 				# y : label
-				x, mean, std, y = data
+				x, mean, std, y, _ = data
 				x = Variable(x)
 				y = Variable(y.type(torch.cuda.FloatTensor), requires_grad = False)
 
@@ -379,7 +386,7 @@ class PresidentSing(nn.Module):
 
 			else:
 
-				print('successfully saved all model - ', prefix + timeText)
+				print('successfully saved all model - ', timeText + prefix)
 
 		elif option == 'param':
 
@@ -399,7 +406,7 @@ class PresidentSing(nn.Module):
 
 			else:
 
-				print('successfully saved all parameters of model - ', prefix + timeText)
+				print('successfully saved all parameters of model - ', timeText + prefix)
 
 		else:
 
@@ -431,7 +438,7 @@ class PresidentSing(nn.Module):
 
 			else:
 
-				print('successfully loaded all model - ', prefix + timeText)
+				print('successfully loaded all model - ', timeText + prefix)
 
 		elif option == 'param':
 
@@ -448,7 +455,7 @@ class PresidentSing(nn.Module):
 
 			else:
 
-				print('successfully loaded all parameters of model - ', prefix + timeText)
+				print('successfully loaded all parameters of model - ', timeText + prefix)
 
 		else:
 
