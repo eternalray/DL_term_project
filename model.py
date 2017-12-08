@@ -306,44 +306,44 @@ class PresidentSing(nn.Module):
 				#loss = self.lossReconstruct(x, xR)
 				loss.backward(retain_graph = True)
 				lossHistory.append(loss.data[0])
-				#self.optDecoderR.step()
+				self.optDecoderR.step()
 
 				if idx % 50 == 0:
 
 					print('loss - first phase : ', loss.data[0])
 
-				loss += torch.sum(torch.abs(z - zT)) / numBatch
+				#loss += torch.sum(torch.abs(z - zT)) / numBatch
 				#loss += self.lossCycle(z, zT)
-				loss.backward(retain_graph = True)
-				lossHistory.append(loss.data[0])
-				#self.optEncoder.step()
+				#loss.backward(retain_graph = True)
+				#lossHistory.append(loss.data[0])
+				self.optEncoder.step()
 
 				if idx % 50 == 0:
 
 					print('loss - second phase : ', loss.data[0])
 
 				# forward pass 2
-				pX = self.discriminator.forward(x)
-				pT = self.discriminator.forward(xT)
-				one = Variable(torch.Tensor([1.0]), requires_grad = False).cuda().expand(pX.size())
+				#pX = self.discriminator.forward(x)
+				#pT = self.discriminator.forward(xT)
+				#one = Variable(torch.Tensor([1.0]), requires_grad = False).cuda().expand(pX.size())
 
 				# index 0 : Real / Fake
 				# index 1 : Target / Otherwise
 				# y == 1 if Target
 				# y == 0 if Otherwise
 
-				loss -= torch.sum(torch.log(pX), 0)[0] / numBatch
-				loss -= torch.sum(y * torch.log(pX) + (one - y) * torch.log(one - pX), 0)[1] / numBatch
-				loss -= torch.sum(torch.log(pT), 0)[0] / numBatch
+				#loss -= torch.sum(torch.log(pX), 0)[0] / numBatch
+				#loss -= torch.sum(y * torch.log(pX) + (one - y) * torch.log(one - pX), 0)[1] / numBatch
+				#loss -= torch.sum(torch.log(pT), 0)[0] / numBatch
 				#loss -= torch.sum(torch.log(pT), 0)[1] / numBatch					# it can be a problem
 				#loss += self.lossGAN(pX[0], 1)
 				#loss += self.lossGAN(pX[1], y)
 				#loss += self.lossGAN(pT[0], 0)
 				#loss += self.lossGAN(pT[1], 1)										# it can be a problem
-				loss.backward()
-				lossHistory.append(loss.data[0])
-				self.optDecoderT.step()
-				self.optDiscrim.step()
+				#loss.backward()
+				#lossHistory.append(loss.data[0])
+				#self.optDecoderT.step()
+				#self.optDiscrim.step()
 
 				if idx % 50 == 0:
 
