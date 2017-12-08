@@ -117,13 +117,13 @@ class Decoder(nn.Module):
 
 			nn.ConvTranspose2d(1, 96, 5, stride = 3, padding = (1, 2)),			# (57, 67, 96)
 			nn.BatchNorm2d(96),
-			nn.LeakyReLU(negative_slope = 0.05, inplace = True),
+			nn.ReLU(inplace = True),
 			nn.ConvTranspose2d(96, 64, 5, stride = 3, padding = 1),				# (171, 201, 64)
 			nn.BatchNorm2d(64),
-			nn.LeakyReLU(negative_slope = 0.05, inplace = True),
+			nn.ReLU(inplace = True),
 			nn.ConvTranspose2d(64, 32, 5, stride = 3, padding = (1, 2)),		# (513, 601, 32)
 			nn.BatchNorm2d(32),
-			nn.LeakyReLU(negative_slope = 0.05, inplace = True),
+			nn.ReLU(inplace = True),
 			nn.ConvTranspose2d(32, 1, 1, stride = 1, padding = 0),				# (513, 601, 1)
 		)
 
