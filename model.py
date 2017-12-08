@@ -296,7 +296,8 @@ class PresidentSing(nn.Module):
 				# objective3 : pX -> false		- discriminator must discriminate real voice of target and fake voice of target
 				# objective4 : pT -> label 		- discriminator must discriminate target's voice and other's voice
 
-				loss = torch.sum((x - xR) ** 2) / numBatch
+				loss  = torch.sum(torch.abs(x - xR)) / (numBatch * 513.0 * 601.0)
+				#loss = torch.sum((x - xR) ** 2) / (numBatch * 513.0 * 601.0)
 				#loss = self.lossReconstruct(x, xR)
 				loss.backward(retain_graph = True)
 				lossHistory.append(loss.data[0])
