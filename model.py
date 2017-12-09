@@ -82,13 +82,13 @@ class Encoder(nn.Module):
 			nn.Conv2d(1, 16, 3, stride = 1, padding = 1),						# (256, 601, 16)
 			nn.BatchNorm2d(16),
 			nn.ReLU(inplace = True),
-			nn.Conv2d(16, 32, 5, stride = 3, padding = 2),						# (85, 201, 32)
+			nn.Conv2d(16, 32, 5, stride = 3, padding = 2),						# (86, 201, 32)
 			nn.BatchNorm2d(32),
 			nn.ReLU(inplace = True),
-			nn.Conv2d(32, 64, 5, stride = 3, padding = (2, 1)),					# (29, 67, 64)
-			nn.BatchNorm2d(64),
-			nn.ReLU(inplace = True),
-			nn.Conv2d(64, 1, 1, stride = 1, padding = 0)						# (29, 67, 1)
+			#nn.Conv2d(32, 64, 5, stride = 3, padding = (0, 1)),				# (28, 67, 64)
+			#nn.BatchNorm2d(64),
+			#nn.ReLU(inplace = True),
+			nn.Conv2d(32, 1, 1, stride = 1, padding = 0)						# (28, 67, 1)
 		)
 
 	def forward(self, x):
@@ -105,10 +105,10 @@ class Decoder(nn.Module):
 
 		self.model = nn.Sequential(
 
-			nn.ConvTranspose2d(1, 64, 5, stride = 3, padding = (2, 1)),			# (85, 201, 64)
-			nn.BatchNorm2d(64),
-			nn.ReLU(inplace = True),
-			nn.ConvTranspose2d(64, 32, 5, stride = 3, padding = 2),				# (256, 601, 32)
+			#nn.ConvTranspose2d(1, 64, 5, stride = 3, padding = (0, 1)),			# (86, 201, 64)
+			#nn.BatchNorm2d(64),
+			#nn.ReLU(inplace = True),
+			nn.ConvTranspose2d(1, 32, 5, stride = 3, padding = 2),				# (256, 601, 32)
 			nn.BatchNorm2d(32),
 			nn.ReLU(inplace = True),
 			nn.ConvTranspose2d(32, 16, 3, stride = 1, padding = 1),				# (256, 601, 16)
@@ -242,6 +242,13 @@ class PresidentSing(nn.Module):
 		xR = xR.data.numpy()
 		xT = xT.data.numpy()
 
+		z = z.reshape(28, 67)
+		xR = xR.reshape(256, 601)
+		xT = xT.reshape(256, 601)
+
+		xR = np.concatenate((remain, xR), axis = 0)
+		xT = np.concatenate((remain, xT), axis = 0)
+
 		#xR = stft.denormalizeSpectro(xR, mean, std)
 		#xT = stft.denormalizeSpectro(xT, mean, std)
 
@@ -283,7 +290,7 @@ class PresidentSing(nn.Module):
 				x = Variable(x)
 				y = Variable(y.type(torch.cuda.FloatTensor), requires_grad = False)
 
-				x = x.view(numBatch, 1, 513, 601)
+				x = x.view(numBatch, 1, 256, 601)
 
 				self.optEncoder.zero_grad()
 				self.optDecoderR.zero_grad()
@@ -302,7 +309,7 @@ class PresidentSing(nn.Module):
 				# objective3 : pX -> false		- discriminator must discriminate real voice of target and fake voice of target
 				# objective4 : pT -> label 		- discriminator must discriminate target's voice and other's voice
 
-				loss  = torch.sum(torch.abs(x - xR)) / (numBatch * 513.0 * 601.0)
+				loss  = torch.sum(torch.abs(x - xR)) / (numBatch * 256.0 * 601.0)
 				#loss = torch.sum((x - xR) ** 2) / (numBatch * 513.0 * 601.0)
 				#loss = self.lossReconstruct(x, xR)
 				loss.backward(retain_graph = True)

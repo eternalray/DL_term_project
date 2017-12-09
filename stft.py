@@ -82,10 +82,26 @@ def normalizeSpectro(spectro, mean = None, std = None):
 
 	if mean == None or std == None:
 
-		mean = np.mean(spectro[spectro > 1.0])
-		std = np.std(spectro[spectro > 1.0])
+		np.seterr(all = 'raise')
 
-	normalized = (spectro - mean) / (std + 1e-13)
+		try:
+
+			mean = np.mean(spectro[spectro > 1.0])
+			std = np.std(spectro[spectro > 1.0])
+
+		except:
+
+			mean = 1e-13
+			std = 1e-13
+			normalized = spectro
+
+		else:
+
+			normalized = (spectro - mean) / (std + 1e-13)
+
+	else:
+
+		normalized = (spectro - mean) / (std + 1e-13)
 
 	return normalized, mean, std
 
@@ -135,7 +151,7 @@ def griffinLim(spectro, iterN = 50):
 
 		if i < iterN - 1:
 
-			spec = librosa.stft(audio, n_fft = 1024, hop_length = 256, win_length = 1024)
+			spec = librosa.stft(audio, n_fft = 2048, hop_length = 256, win_length = 1024)
 			_, phase = librosa.magphase(spec)
 			spec = spectro * np.exp(1.0j * np.angle(phase))
 

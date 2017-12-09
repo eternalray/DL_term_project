@@ -16,13 +16,13 @@ import matplotlib.pyplot as plt
 #         python main.py ./audios ./model convert
 #         python main.py ./dataset ./model train
 
-def convert(model, path, mode = 'target'):
+def convert(model, path):
 
 	if os.path.isfile(path):
 
 		if os.path.splitext(path)[-1] == '.wav':
 
-			convertFile(model, path, mode)
+			convertFile(model, path)
 
 	elif os.path.isdir(path):
 
@@ -32,7 +32,7 @@ def convert(model, path, mode = 'target'):
 
 				if os.path.splitext(f)[-1] == '.wav':
 
-					convertFile(model, os.path.join(ps, f), mode)
+					convertFile(model, os.path.join(ps, f))
 
 	else:
 
@@ -119,7 +119,6 @@ def main(path, modelPath, mode):
 		timeNow = timeit.default_timer()
 
 		convert(model, path)
-		convert(model, path, 'reconstruct')
 
 		print('Convert ended')
 		print('Elapsed time : ', timeit.default_timer() - timeNow)
