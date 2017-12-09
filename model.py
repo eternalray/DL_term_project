@@ -49,11 +49,13 @@ class AudioLoader(torchData.Dataset):
 			data = np.power(10.0, data - 1e-13)
 			maximum = np.max(data)
 			data = data / maximum
+			data[data < np.mean(data)] = 0.0
+			print(np.std(data))
 
 			#data, mean, std = stft.normalizeSpectro(data)
 			data = torch.from_numpy(data)
-			mean = torch.from_numpy(np.array([mean]))
-			std = torch.from_numpy(np.array([std]))
+			#mean = torch.from_numpy(np.array([mean]))
+			#std = torch.from_numpy(np.array([std]))
 
 		if self.target in self.fileList[idx]:
 
@@ -225,6 +227,7 @@ class PresidentSing(nn.Module):
 
 		maximum = np.max(x)
 		x = x / maximum
+		x[x < np.mean(x)] = 0.0
 		x = torch.from_numpy(x)
 		x = Variable(x, requires_grad = False)
 		x = x.contiguous()
