@@ -110,10 +110,10 @@ class Decoder(nn.Module):
 			#nn.ReLU(inplace = True),
 			nn.ConvTranspose2d(1, 32, 5, stride = 3, padding = 2),				# (256, 601, 32)
 			nn.BatchNorm2d(32),
-			nn.ReLU(inplace = True),
+			nn.LeakyReLU(negative_slope = 0.05, inplace = True),
 			nn.ConvTranspose2d(32, 16, 3, stride = 1, padding = 1),				# (256, 601, 16)
 			nn.BatchNorm2d(16),
-			nn.ReLU(inplace = True),
+			nn.LeakyReLU(negative_slope = 0.05, inplace = True),
 			nn.ConvTranspose2d(16, 1, 1, stride = 1, padding = 0),				# (256, 601, 1)
 		)
 
