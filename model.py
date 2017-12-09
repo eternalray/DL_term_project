@@ -131,24 +131,27 @@ class Discriminator(nn.Module):
 
 		self.model = nn.Sequential(
 
-			nn.Conv2d(1, 32, 5, stride = 3, padding = 2),						# (171, 201, 32)
-			nn.BatchNorm2d(32),
+			nn.Conv2d(1, 8, 3, stride = 1, padding = 1),						# (256, 601, 16)
+			nn.BatchNorm2d(8),
 			nn.ReLU(inplace = True),
-			nn.Conv2d(32, 64, 5, stride = 3, padding = 1),						# (57, 67, 64)
-			nn.BatchNorm2d(64),
-			nn.ReLU(inplace = True),
-			nn.Conv2d(64, 96, 5, stride = 3, padding = (1, 2)),					# (19, 23, 96)
-			nn.BatchNorm2d(96),
-			nn.ReLU(inplace = True),
-			nn.Conv2d(96, 16, 1, stride = 1, padding = 0),						# (19, 23, 16)
+			nn.Conv2d(8, 16, 5, stride = 3, padding = 2),						# (86, 201, 32)
 			nn.BatchNorm2d(16),
 			nn.ReLU(inplace = True),
-			Flatten(),															# (19 * 23 * 16)
-			nn.Linear(19 * 23 * 16, 4096, bias = True),							# (4096)
-			nn.ReLU(True),
-			nn.Linear(4096, 1024, bias = True),									# (1024)
-			nn.ReLU(True),
-			nn.Linear(1024, 2, bias = True),									# (2)
+			nn.Conv2d(16, 32, 5, stride = 3, padding = (0, 1)),					# (28, 67, 64)
+			nn.BatchNorm2d(32),
+			nn.ReLU(inplace = True),
+			nn.Conv2d(32, 64, 5, stride = 3, padding = 2),						# (10, 23, 96)
+			nn.BatchNorm2d(64),
+			nn.ReLU(inplace = True),
+			nn.Conv2d(64, 16, 5, stride = 1, padding = 1),						# (10, 23, 16)
+			nn.BatchNorm2d(16),
+			nn.ReLU(inplace = True),
+			Flatten(),															# (10 * 23 * 16)
+			nn.Linear(10 * 23 * 16, 1024, bias = True),							# (1024)
+			nn.ReLU(inplace = True),
+			nn.Linear(1024, 512, bias = True),									# (512)
+			nn.ReLU(inplace = True),
+			nn.Linear(512, 2, bias = True),										# (2)
 			nn.Sigmoid()
 		)			
 
@@ -314,7 +317,7 @@ class PresidentSing(nn.Module):
 				# objective4 : pT -> label 		- discriminator must discriminate target's voice and other's voice
 
 				loss  = torch.sum(torch.abs(x - xR)) / (numBatch * 256.0 * 601.0)
-				#loss = torch.sum((x - xR) ** 2) / (numBatch * 513.0 * 601.0)
+				#loss = torch.sum((x - xR) ** 2) / (numBatch * 256.0 * 601.0)
 				#loss = self.lossReconstruct(x, xR)
 				loss.backward(retain_graph = True)
 				lossHistory.append(loss.data[0])
@@ -324,10 +327,10 @@ class PresidentSing(nn.Module):
 
 					print('loss - first phase : ', loss.data[0])
 
-				#loss += torch.sum(torch.abs(z - zT)) / numBatch
+				loss += torch.sum(torch.abs(z - zT)) / (numBatch * 86.0 * 201.0)
 				#loss += self.lossCycle(z, zT)
-				#loss.backward(retain_graph = True)
-				#lossHistory.append(loss.data[0])
+				loss.backward(retain_graph = True)
+				lossHistory.append(loss.data[0])
 				self.optEncoder.step()
 
 				if idx % 50 == 0:
@@ -335,27 +338,27 @@ class PresidentSing(nn.Module):
 					print('loss - second phase : ', loss.data[0])
 
 				# forward pass 2
-				#pX = self.discriminator.forward(x)
-				#pT = self.discriminator.forward(xT)
-				#one = Variable(torch.Tensor([1.0]), requires_grad = False).cuda(1).expand(pX.size())
+				pX = self.discriminator.forward(x)
+				pT = self.discriminator.forward(xT)
+				one = Variable(torch.Tensor([1.0]), requires_grad = False).cuda(1).expand(pX.size())
 
 				# index 0 : Real / Fake
 				# index 1 : Target / Otherwise
 				# y == 1 if Target
 				# y == 0 if Otherwise
 
-				#loss -= torch.sum(torch.log(pX), 0)[0] / numBatch
-				#loss -= torch.sum(y * torch.log(pX) + (one - y) * torch.log(one - pX), 0)[1] / numBatch
-				#loss -= torch.sum(torch.log(pT), 0)[0] / numBatch
+				loss -= torch.sum(torch.log(pX), 0)[0] / numBatch
+				loss -= torch.sum(y * torch.log(pX) + (one - y) * torch.log(one - pX), 0)[1] / numBatch
+				loss -= torch.sum(torch.log(pT), 0)[0] / numBatch
 				#loss -= torch.sum(torch.log(pT), 0)[1] / numBatch					# it can be a problem
 				#loss += self.lossGAN(pX[0], 1)
 				#loss += self.lossGAN(pX[1], y)
 				#loss += self.lossGAN(pT[0], 0)
 				#loss += self.lossGAN(pT[1], 1)										# it can be a problem
-				#loss.backward()
-				#lossHistory.append(loss.data[0])
-				#self.optDecoderT.step()
-				#self.optDiscrim.step()
+				loss.backward()
+				lossHistory.append(loss.data[0])
+				self.optDecoderT.step()
+				self.optDiscrim.step()
 
 				if idx % 50 == 0:
 

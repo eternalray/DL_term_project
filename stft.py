@@ -52,17 +52,17 @@ def transformAll(filePath, timeLength = 3):
 	# load audio
 	audio, rate = librosa.load(filePath, mono = True, sr = 51200)
 	
-	# remove each 10% of foremost, hindmost from audio
+	# remove each 5% of foremost, hindmost from audio
 	# size of window is (sampling rate) * (time in second)
-	start = int(audio.shape[0] * 0.1)
-	end = int(audio.shape[0] * 0.9)
+	start = int(audio.shape[0] * 0.05)
+	end = int(audio.shape[0] * 0.95)
 	windowSize = timeLength * rate
 
-	# use 80% of audio
+	# use 90% of audio
 	selected = audio[start : end]
 
 	# use 100% of audio
-	selected = audio
+	#selected = audio
 
 	# STFT for divided audio
 	for window in util.divideList(selected, windowSize):
@@ -70,11 +70,13 @@ def transformAll(filePath, timeLength = 3):
 		spectro = librosa.stft(window, n_fft = 2048, hop_length = 256, win_length = 1024)
 
 		# need padding last window, make shape (1025, 601)
-		if spectro.shape[1] < 601:
+		#if spectro.shape[1] < 601:
 
-			spectro = np.lib.pad(spectro, ((0, 0), (0, 601 - spectro.shape[1])), 'constant', constant_values = 1e-13)
+			#spectro = np.lib.pad(spectro, ((0, 0), (0, 601 - spectro.shape[1])), 'constant', constant_values = 1e-13)
 
-		result.append(np.abs(spectro))
+		if spectro.shape[1] == 601:
+
+			result.append(np.abs(spectro))
 		
 	return result
 
