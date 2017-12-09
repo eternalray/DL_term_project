@@ -9,6 +9,7 @@ from model import PresidentSing
 
 import librosa
 import numpy as np
+import matplotlib.pyplot as plt
 
 # Usage : python main.py <inPath> <outPath> <mode>
 #
@@ -47,6 +48,9 @@ def convertFile(convertModel, path, mode = 'target', show = False):
 	#for normalized, mean, std in normalizedList:
 	for normalized in spectroList:
 
+		librosa.display.specshow(normalized)
+		plt.show()
+
 		if mode == 'target':
 
 			_, _, converted = convertModel.convert(normalized)
@@ -61,7 +65,11 @@ def convertFile(convertModel, path, mode = 'target', show = False):
 
 			print('Mode can be "target" or "reconstruct"')
 
+		librosa.display.specshow(converted)
+		plt.show()
 		converted[converted < np.mean(converted)] = 0.0
+		librosa.display.specshow(converted)
+		plt.show()
 		#converted = stft.denormalizeSpectro(converted, mean, std)
 		convertedAudio = stft.griffinLim(converted)
 		audioList.append(convertedAudio)
