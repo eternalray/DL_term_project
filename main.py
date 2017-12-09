@@ -16,13 +16,13 @@ import matplotlib.pyplot as plt
 #         python main.py ./audios ./model convert
 #         python main.py ./dataset ./model train
 
-def convert(convertModel, path, mode = 'target'):
+def convert(model, path, mode = 'target'):
 
 	if os.path.isfile(path):
 
 		if os.path.splitext(path)[-1] == '.wav':
 
-			fileName, audio = convertFile(convertModel, path, mode)
+			convertFile(model, path, mode)
 
 	elif os.path.isdir(path):
 
@@ -32,73 +32,65 @@ def convert(convertModel, path, mode = 'target'):
 
 				if os.path.splitext(f)[-1] == '.wav':
 
-					fileName, audio = convertFile(convertModel, os.path.join(ps, f), mode)
+					convertFile(model, os.path.join(ps, f), mode)
 
 	else:
 
 		print('Error : Given path is wrong')
 
-def convertFile(convertModel, path, mode = 'target', show = False):
+def convertFile(model, path, show = False):
 
-	audioList = list()
+	reconstList = list()
+	targetList = list()
 
 	spectroList = stft.transformAll(path)
-	#normalizedList = stft.normalizeSpectroList(spectroList)
+	normalizedList = stft.normalizeSpectroList(spectroList)
 
-	#for normalized, mean, std in normalizedList:
-	for normalized in spectroList:
+	for normalized, mean, std in normalizedList:
 
 		librosa.display.specshow(normalized)
 		plt.show()
 
-		if mode == 'target':
+		latent, reconst, target = model.convert(normalized)
 
-			_, _, converted = convertModel.convert(normalized)
-			fileName = 'converted_target_' + os.path.basename(path)
-
-		elif mode == 'reconstruct':
-
-			_, converted, _ = convertModel.convert(normalized)
-			fileName = 'converted_reconstruct_' + os.path.basename(path)
-
-		else:
-
-			print('Mode can be "target" or "reconstruct"')
-
-		librosa.display.specshow(converted)
+		librosa.display.specshow(latent)
 		plt.show()
-		converted[converted < np.mean(converted)] = 0.0
-		librosa.display.specshow(converted)
+		librosa.display.specshow(reconst)
 		plt.show()
-		#converted = stft.denormalizeSpectro(converted, mean, std)
-		convertedAudio = stft.griffinLim(converted)
-		audioList.append(convertedAudio)
+		librosa.display.specshow(target)
+		plt.show()
 
-	audio = stft.concatAudio(audioList)
-	dirName = os.path.dirname(path)
+		reconstList.append(stft.griffinLim(stft.denormalizeSpectro(reconst, mean, std)))
+		targetList.append(stft.griffinLim(stft.denormalizeSpectro(target, mean, std)))
+
+	reconst = stft.concatAudio(reconstList)
+	target = stft.concatAudio(targetList)
 	
-	librosa.output.write_wav(os.path.join(dirName, fileName), audio, sr = 51200)
-	print('Output : ', fileName)
+	fileReconst = 'converted_reconstruct_' + os.path.basename(path)
+	fileTarget = 'converted_target_' + os.path.basename(path)
+	librosa.output.write_wav(os.path.join(os.path.dirname(path), fileReconst), reconst, sr = 51200)
+	librosa.output.write_wav(os.path.join(os.path.dirname(path), fileTarget), target, sr = 51200)
+	print('Output : ', fileReconst)
+	print('Output : ', fileTarget)
 
 	if show:
 
-		original, _ = librosa.load(path, mono = True, sr = 51200)
+		original, rate = librosa.load(path, mono = True, sr = 51200)
 		
 		stft.showSpectrogram(original)
-		stft.showSpectrogram(audio)
-
-	return fileName, audio
+		stft.showSpectrogram(reconst)
+		stft.showSpectrogram(target)
 
 def main(path, modelPath, mode):
 
-	convertModel = PresidentSing(path, modelPath, 4096)
+	model = PresidentSing(path, modelPath, 4096)
 
 	if mode == 'train':
 
 		print('Train started')
 		timeNow = timeit.default_timer()
 		
-		lossHistory = convertModel.train()
+		lossHistory = model.train()
 
 		print('Train ended')
 		print('Elapsed time : ', timeit.default_timer() - timeNow)
@@ -107,12 +99,12 @@ def main(path, modelPath, mode):
 
 	elif mode == 'trainC':
 
-		convertModel.load(modelPath)
+		model.load(modelPath)
 
 		print('Train started')
 		timeNow = timeit.default_timer()
 		
-		lossHistory = convertModel.train()
+		lossHistory = model.train()
 
 		print('Train ended')
 		print('Elapsed time : ', timeit.default_timer() - timeNow)
@@ -121,13 +113,13 @@ def main(path, modelPath, mode):
 
 	elif mode == 'convert':
 
-		convertModel.load(modelPath, prefix = 'final')
+		model.load(modelPath, prefix = 'final')
 
 		print('Convert started')
 		timeNow = timeit.default_timer()
 
-		convert(convertModel, path)
-		convert(convertModel, path, 'reconstruct')
+		convert(model, path)
+		convert(model, path, 'reconstruct')
 
 		print('Convert ended')
 		print('Elapsed time : ', timeit.default_timer() - timeNow)

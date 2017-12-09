@@ -33,14 +33,14 @@ def transformExtract(filePath, timeLength = 3, size = 100):
 	for idx in selected:
 
 		window = audio[idx : idx + windowSize]
-		spectro = librosa.stft(window, n_fft = 1024, hop_length = 256, win_length = 1024)
+		spectro = librosa.stft(window, n_fft = 2048, hop_length = 256, win_length = 1024)
 
 		# need padding last window, make shape (1025, 801)
 		if spectro.shape[1] < 601:
 
 			spectro = np.lib.pad(spectro, ((0, 0), (0, 601 - spectro.shape[1])), 'constant', constant_values = 1e-13)
 
-		result.append(np.log10(np.abs(spectro) + 1e-13))
+		result.append(np.abs(spectro))
 
 	# return STFT to train, val, test set
 	return result[: int(size * 0.6)], result[int(size * 0.6) : int(size * 0.8)], result[int(size * 0.8):]
@@ -67,21 +67,23 @@ def transformAll(filePath, timeLength = 3):
 	# STFT for divided audio
 	for window in util.divideList(selected, windowSize):
 
-		spectro = librosa.stft(window, n_fft = 1024, hop_length = 256, win_length = 1024)
+		spectro = librosa.stft(window, n_fft = 2048, hop_length = 256, win_length = 1024)
 
-		# need padding last window, make shape (513, 601)
+		# need padding last window, make shape (1025, 601)
 		if spectro.shape[1] < 601:
 
 			spectro = np.lib.pad(spectro, ((0, 0), (0, 601 - spectro.shape[1])), 'constant', constant_values = 1e-13)
 
-		result.append(np.log10(np.abs(spectro) + 1e-13))
+		result.append(np.abs(spectro))
 		
 	return result
 
-def normalizeSpectro(spectro):
+def normalizeSpectro(spectro, mean = None, std = None):
 
-	mean = np.mean(spectro)
-	std = np.std(spectro)
+	if mean == None or std == None:
+
+		mean = np.mean(spectro[spectro > 1.0])
+		std = np.std(spectro[spectro > 1.0])
 
 	normalized = (spectro - mean) / (std + 1e-13)
 
@@ -90,10 +92,15 @@ def normalizeSpectro(spectro):
 def normalizeSpectroList(spectroList):
 
 	normalizedList = list()
+	
+	listMean = np.concatenate(spectroList) 
+	listStd = np.concatenate(spectroList)
+	listMean = np.mean(listMean[listMean > 1.0])
+	listStd = np.std(listMean[listMean > 1.0])
 
 	for spectro in spectroList:
 
-		normalized, mean, std = normalizeSpectro(spectro)
+		normalized, mean, std = normalizeSpectro(spectro, listMean, listStd)
 
 		normalizedList.append((normalized, mean, std))
 
@@ -101,10 +108,7 @@ def normalizeSpectroList(spectroList):
 
 def denormalizeSpectro(spectro, mean, std):
 
-	spectro = spectro.reshape(513, 601)
-	denormalized = (spectro * (std + 1e-13)) + mean
-
-	return denormalized
+	return (spectro * (std + 1e-13)) + mean
 
 def denormalizeSpectroList(normalizedList):
 
@@ -113,7 +117,6 @@ def denormalizeSpectroList(normalizedList):
 	for normalized, mean, std in normalizedList:
 
 		denormalized = normalizeSpectro(normalized, mean, std)
-
 		normalizedList.append(denormalized)
 
 	return denormalizedList
@@ -137,12 +140,6 @@ def griffinLim(spectro, iterN = 50):
 			spec = spectro * np.exp(1.0j * np.angle(phase))
 
 	return audio
-
-def showSpectrogram(audio):
-
-	spectro = librosa.stft(audio, n_fft = 1024, hop_length = 256, win_length = 1024)
-	librosa.display.specshow(spectro)
-	plt.show()
 
 def concatAudio(dataList, dtype = 'audio'):
 
@@ -249,17 +246,6 @@ def main(inPath, outPath, mode = 'continuous'):
 
 						continue
 
-	elif mode == 'show':
-
-		for path, dirs, files in os.walk(inPath):
-
-			for f in files:
-
-				if os.path.splitext(f)[-1] == '.wav':
-
-					audio, rate = librosa.load(filePath, mono = True, sr = 51200)
-					showSpectrogram(audio)
-
 	else:
 
 		print('Error : Mode can be "continuous", "extraction" or "show"')
@@ -274,7 +260,7 @@ if __name__ == '__main__':
 	parser = argparse.ArgumentParser()
 	parser.add_argument('inPath', help = 'input path of wav file or directory')
 	parser.add_argument('outPath', help = 'input path of wav file or directory')
-	parser.add_argument('mode', help = 'continous, extraction, show')
+	parser.add_argument('mode', help = '"continous" or "extraction"')
 	
 	args = parser.parse_args()
 	

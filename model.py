@@ -45,17 +45,8 @@ class AudioLoader(torchData.Dataset):
 
 		with open(os.path.join(self.inPath, self.fileList[idx]), 'rb') as fs:
 
-			data = pickle.load(fs)
-			data = np.power(10.0, data - 1e-13)
-
-			selectedMean = np.mean(data[data > 1.0])
-			selectedStd = np.std(data[data > 1.0])
-			data = (data - selectedMean) / (selectedStd + 1e-13)
-
-			#data, mean, std = stft.normalizeSpectro(data)
-			data = torch.from_numpy(data)
-			#mean = torch.from_numpy(np.array([mean]))
-			#std = torch.from_numpy(np.array([std]))
+			data, _, _ = stft.normalizeSpectro(pickle.load(fs))
+			data = torch.from_numpy(data[:256,:])
 
 		if self.target in self.fileList[idx]:
 
@@ -69,12 +60,9 @@ class AudioLoader(torchData.Dataset):
 
 		if torch.cuda.is_available():
 
-			data = data.cuda()
-			#mean = mean.cuda()
-			#std = std.cuda()
-			label = label.cuda()
+			data = data.cuda(1)
+			label = label.cuda(1)
 
-		#return data, mean, std, label
 		return data, label
 
 	def __len__(self):
@@ -87,7 +75,7 @@ class Encoder(nn.Module):
 
 		super(Encoder, self).__init__()
 		
-		# input matrix (513, 601) : frequency * time
+		# input matrix (1025, 601) : frequency * time
 
 		self.model = nn.Sequential(
 
@@ -190,10 +178,10 @@ class PresidentSing(nn.Module):
 
 		if torch.cuda.is_available():
 
-			self.encoder = Encoder().cuda()
-			self.decoderR = Decoder().cuda()
-			self.decoderT = Decoder().cuda()
-			self.discriminator = Discriminator().cuda()
+			self.encoder = Encoder().cuda(1)
+			self.decoderR = Decoder().cuda(1)
+			self.decoderT = Decoder().cuda(1)
+			self.discriminator = Discriminator().cuda(1)
 
 		else:
 
@@ -227,18 +215,14 @@ class PresidentSing(nn.Module):
 
 	def convert(self, x):
 
-		selectedMean = np.mean(x[x > 1.0])
-		selectedStd = np.std(x[x > 1.0])
-		x = (x - selectedMean) / (selectedStd + 1e-13)
-
-		x = torch.from_numpy(x)
-		x = Variable(x, requires_grad = False)
+		x, mean, std = stft.normalizeSpectro(x)
+		x = Variable(torch.from_numpy(x), requires_grad = False)
 		x = x.contiguous()
 		x = x.view(1, 1, 513, 601)
 
 		if torch.cuda.is_available():
 
-			x = x.cuda()
+			x = x.cuda(1)
 
 		z = self.encoder.forward(x)
 		xR = self.decoderR.forward(z)
@@ -254,12 +238,12 @@ class PresidentSing(nn.Module):
 		xR = xR.data.numpy()
 		xT = xT.data.numpy()
 
-		xR = xR * (selectedStd + 1e-13) + selectedMean
-		xT = xT * (selectedStd + 1e-13) + selectedMean
+		#xR = stft.denormalizeSpectro(xR, mean, std)
+		#xT = stft.denormalizeSpectro(xT, mean, std)
 
 		return z, xR, xT
 
-	def train(self, learningRate = 1e-5, numEpoch = 5, numBatch = 32):
+	def train(self, learningRate = 1e-4, numEpoch = 5, numBatch = 32):
 
 		history = list()
 
@@ -291,7 +275,6 @@ class PresidentSing(nn.Module):
 				
 				# x : spectrogram
 				# y : label
-				#x, mean, std, y = data
 				x, y = data
 				x = Variable(x)
 				y = Variable(y.type(torch.cuda.FloatTensor), requires_grad = False)
@@ -339,7 +322,7 @@ class PresidentSing(nn.Module):
 				# forward pass 2
 				#pX = self.discriminator.forward(x)
 				#pT = self.discriminator.forward(xT)
-				#one = Variable(torch.Tensor([1.0]), requires_grad = False).cuda().expand(pX.size())
+				#one = Variable(torch.Tensor([1.0]), requires_grad = False).cuda(1).expand(pX.size())
 
 				# index 0 : Real / Fake
 				# index 1 : Target / Otherwise
