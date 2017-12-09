@@ -48,19 +48,19 @@ def convertFile(model, path, show = False):
 
 	for normalized, mean, std in normalizedList:
 
-		librosa.display.specshow(normalized)
-		plt.show()
-		librosa.display.specshow(normalized[:256,:])
-		plt.show()
+		#librosa.display.specshow(normalized)
+		#plt.show()
+		#librosa.display.specshow(normalized[:256,:])
+		#plt.show()
 
 		latent, reconst, target = model.convert(normalized)
 
-		librosa.display.specshow(latent)
-		plt.show()
-		librosa.display.specshow(reconst)
-		plt.show()
-		librosa.display.specshow(target)
-		plt.show()
+		#librosa.display.specshow(latent)
+		#plt.show()
+		#librosa.display.specshow(reconst)
+		#plt.show()
+		#librosa.display.specshow(target)
+		#plt.show()
 
 		reconst = np.power(1.5, reconst)
 		target = np.power(1.5, target)
@@ -88,7 +88,7 @@ def convertFile(model, path, show = False):
 
 def main(path, modelPath, mode):
 
-	model = PresidentSing(path, modelPath, 4096)
+	model = PresidentSing(path, modelPath, 12288)
 
 	if mode == 'train':
 

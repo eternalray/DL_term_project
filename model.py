@@ -131,22 +131,22 @@ class Discriminator(nn.Module):
 
 		self.model = nn.Sequential(
 
-			nn.Conv2d(1, 8, 3, stride = 1, padding = 1),						# (256, 601, 16)
+			nn.Conv2d(1, 8, 3, stride = 1, padding = 1),						# (256, 601, 8)
 			nn.BatchNorm2d(8),
 			nn.ReLU(inplace = True),
-			nn.Conv2d(8, 16, 5, stride = 3, padding = 2),						# (86, 201, 32)
+			nn.Conv2d(8, 16, 5, stride = 3, padding = 2),						# (86, 201, 16)
 			nn.BatchNorm2d(16),
 			nn.ReLU(inplace = True),
-			nn.Conv2d(16, 32, 5, stride = 3, padding = (0, 1)),					# (28, 67, 64)
+			nn.Conv2d(16, 32, 5, stride = 3, padding = (0, 1)),					# (28, 67, 32)
 			nn.BatchNorm2d(32),
 			nn.ReLU(inplace = True),
-			nn.Conv2d(32, 64, 5, stride = 3, padding = 2),						# (10, 23, 96)
+			nn.Conv2d(32, 64, 5, stride = 3, padding = 2),						# (10, 23, 64)
 			nn.BatchNorm2d(64),
 			nn.ReLU(inplace = True),
-			nn.Conv2d(64, 16, 5, stride = 1, padding = 1),						# (10, 23, 16)
+			nn.Conv2d(64, 16, 1, stride = 1, padding = 0),						# (10, 23, 16)
 			nn.BatchNorm2d(16),
 			nn.ReLU(inplace = True),
-			Flatten(),															# (10 * 23 * 16)
+			Flatten(),															# (10 * 23 * 16)														
 			nn.Linear(10 * 23 * 16, 1024, bias = True),							# (1024)
 			nn.ReLU(inplace = True),
 			nn.Linear(1024, 512, bias = True),									# (512)
@@ -261,14 +261,14 @@ class PresidentSing(nn.Module):
 
 		return z, xR, xT
 
-	def train(self, learningRate = 3e-4, numEpoch = 5, numBatch = 32):
+	def train(self, learningRate = 1e-5, numEpoch = 30, numBatch = 32):
 
 		history = list()
 
-		self.optEncoder = optim.Adam(self.encoder.parameters(), lr = learningRate, weight_decay = 0.9)
-		self.optDecoderR = optim.Adam(self.decoderR.parameters(), lr = learningRate, weight_decay = 0.9)
-		self.optDecoderT = optim.Adam(self.decoderT.parameters(), lr = learningRate, weight_decay = 0.9)
-		self.optDiscrim = optim.Adam(self.discriminator.parameters(), lr = learningRate, weight_decay = 0.9)
+		self.optEncoder = optim.Adam(self.encoder.parameters(), lr = learningRate, weight_decay = 0.95)
+		self.optDecoderR = optim.Adam(self.decoderR.parameters(), lr = learningRate, weight_decay = 0.95)
+		self.optDecoderT = optim.Adam(self.decoderT.parameters(), lr = learningRate, weight_decay = 0.95)
+		self.optDiscrim = optim.Adam(self.discriminator.parameters(), lr = learningRate, weight_decay = 0.95)
 
 		self.lossReconstruct = nn.MSELoss()
 		self.lossCycle = nn.L1Loss()
@@ -307,8 +307,8 @@ class PresidentSing(nn.Module):
 				# forward pass 1
 				z = self.encoder.forward(x)
 				xR = self.decoderR.forward(z)
-				#xT = self.decoderT.forward(z)
-				#zT = self.encoder.forward(xT)
+				xT = self.decoderT.forward(z)
+				zT = self.encoder.forward(xT)
 				#xTR = self.decoderR.forward(zT)
 
 				# objective1 : x == xR 			- role of autoencoder
@@ -347,9 +347,9 @@ class PresidentSing(nn.Module):
 				# y == 1 if Target
 				# y == 0 if Otherwise
 
-				loss -= torch.sum(torch.log(pX), 0)[0] / numBatch
-				loss -= torch.sum(y * torch.log(pX) + (one - y) * torch.log(one - pX), 0)[1] / numBatch
-				loss -= torch.sum(torch.log(pT), 0)[0] / numBatch
+				loss -= torch.sum(torch.log(pX), 0)[0] / (numBatch * 3.0)
+				loss -= torch.sum(y * torch.log(pX) + (one - y) * torch.log(one - pX), 0)[1] / (numBatch * 3.0)
+				loss -= torch.sum(torch.log(pT), 0)[0] / (numBatch * 3.0)
 				#loss -= torch.sum(torch.log(pT), 0)[1] / numBatch					# it can be a problem
 				#loss += self.lossGAN(pX[0], 1)
 				#loss += self.lossGAN(pX[1], y)
