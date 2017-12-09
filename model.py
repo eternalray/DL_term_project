@@ -47,10 +47,10 @@ class AudioLoader(torchData.Dataset):
 
 			data = pickle.load(fs)
 			data = np.power(10.0, data - 1e-13)
-			maximum = np.max(data)
-			data = data / maximum
-			data[data < np.mean(data)] = 0.0
-			print(np.std(data))
+
+			selectedMean = np.mean(data[data > 1.0])
+			selectedStd = np.std(data[data > 1.0])
+			data = (data - selectedMean) / (selectedStd + 1e-13)
 
 			#data, mean, std = stft.normalizeSpectro(data)
 			data = torch.from_numpy(data)
@@ -202,6 +202,7 @@ class PresidentSing(nn.Module):
 			self.decoderT = Decoder()
 			self.discriminator = Discriminator()
 
+	"""
 	def forward(self, x):
 
 		# x 	: input
@@ -222,12 +223,14 @@ class PresidentSing(nn.Module):
 		pT = self.discriminator.forward(xT)
 
 		return z, xR, xT, zT, xTR, pX, pT
+	"""
 
 	def convert(self, x):
 
-		maximum = np.max(x)
-		x = x / maximum
-		x[x < np.mean(x)] = 0.0
+		selectedMean = np.mean(x[x > 1.0])
+		selectedStd = np.std(x[x > 1.0])
+		x = (x - selectedMean) / (selectedStd + 1e-13)
+
 		x = torch.from_numpy(x)
 		x = Variable(x, requires_grad = False)
 		x = x.contiguous()
@@ -247,7 +250,14 @@ class PresidentSing(nn.Module):
 			xR = xR.cpu()
 			xT = xT.cpu()
 
-		return z.data.numpy(), xR.data.numpy() * maximum, xT.data.numpy() * maximum
+		z = z.data.numpy()
+		xR = xR.data.numpy()
+		xT = xT.data.numpy()
+
+		xR = xR * (selectedStd + 1e-13) + selectedMean
+		xT = xT * (selectedStd + 1e-13) + selectedMean
+
+		return z, xR, xT
 
 	def train(self, learningRate = 1e-5, numEpoch = 5, numBatch = 32):
 
@@ -296,8 +306,8 @@ class PresidentSing(nn.Module):
 				# forward pass 1
 				z = self.encoder.forward(x)
 				xR = self.decoderR.forward(z)
-				xT = self.decoderT.forward(z)
-				zT = self.encoder.forward(xT)
+				#xT = self.decoderT.forward(z)
+				#zT = self.encoder.forward(xT)
 				#xTR = self.decoderR.forward(zT)
 
 				# objective1 : x == xR 			- role of autoencoder
