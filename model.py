@@ -75,20 +75,20 @@ class Encoder(nn.Module):
 
 		super(Encoder, self).__init__()
 		
-		# input matrix (1025, 601) : frequency * time
+		# input matrix (256, 601) : frequency * time
 
 		self.model = nn.Sequential(
 
-			nn.Conv2d(1, 32, 5, stride = 3, padding = 2),						# (171, 201, 32)
+			nn.Conv2d(1, 16, 3, stride = 1, padding = 1),						# (256, 601, 16)
+			nn.BatchNorm2d(16),
+			nn.ReLU(inplace = True),
+			nn.Conv2d(16, 32, 5, stride = 3, padding = 2),						# (85, 201, 32)
 			nn.BatchNorm2d(32),
 			nn.ReLU(inplace = True),
-			nn.Conv2d(32, 64, 5, stride = 3, padding = 1),						# (57, 67, 64)
+			nn.Conv2d(32, 64, 5, stride = 3, padding = (2, 1)),					# (29, 67, 64)
 			nn.BatchNorm2d(64),
 			nn.ReLU(inplace = True),
-			nn.Conv2d(64, 96, 5, stride = 3, padding = (1, 2)),					# (19, 23, 96)
-			nn.BatchNorm2d(96),
-			nn.ReLU(inplace = True),
-			nn.Conv2d(96, 1, 1, stride = 1, padding = 0)						# (19, 23, 1)
+			nn.Conv2d(64, 1, 1, stride = 1, padding = 0)						# (29, 67, 1)
 		)
 
 	def forward(self, x):
@@ -105,16 +105,16 @@ class Decoder(nn.Module):
 
 		self.model = nn.Sequential(
 
-			nn.ConvTranspose2d(1, 96, 5, stride = 3, padding = (1, 2)),			# (57, 67, 96)
-			nn.BatchNorm2d(96),
-			nn.ReLU(inplace = True),
-			nn.ConvTranspose2d(96, 64, 5, stride = 3, padding = 1),				# (171, 201, 64)
+			nn.ConvTranspose2d(1, 64, 5, stride = 3, padding = (2, 1)),			# (85, 201, 64)
 			nn.BatchNorm2d(64),
 			nn.ReLU(inplace = True),
-			nn.ConvTranspose2d(64, 32, 5, stride = 3, padding = (1, 2)),		# (513, 601, 32)
+			nn.ConvTranspose2d(64, 32, 5, stride = 3, padding = 2),				# (256, 601, 32)
 			nn.BatchNorm2d(32),
 			nn.ReLU(inplace = True),
-			nn.ConvTranspose2d(32, 1, 1, stride = 1, padding = 0),				# (513, 601, 1)
+			nn.ConvTranspose2d(32, 16, 3, stride = 1, padding = 1),				# (256, 601, 16)
+			nn.BatchNorm2d(16),
+			nn.ReLU(inplace = True),
+			nn.ConvTranspose2d(16, 1, 1, stride = 1, padding = 0),				# (256, 601, 1)
 		)
 
 	def forward(self, x):
@@ -215,10 +215,14 @@ class PresidentSing(nn.Module):
 
 	def convert(self, x):
 
-		x, mean, std = stft.normalizeSpectro(x)
+		#x, mean, std = stft.normalizeSpectro(x)
+
+		remain = x[256:,:]
+		x = x[:256,:]
+
 		x = Variable(torch.from_numpy(x), requires_grad = False)
 		x = x.contiguous()
-		x = x.view(1, 1, 513, 601)
+		x = x.view(1, 1, 256, 601)
 
 		if torch.cuda.is_available():
 
