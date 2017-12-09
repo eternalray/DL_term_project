@@ -112,7 +112,7 @@ def normalizeSpectroList(spectroList):
 	listMean = np.concatenate(spectroList) 
 	listStd = np.concatenate(spectroList)
 	listMean = np.mean(listMean[listMean > 1.0])
-	listStd = np.std(listMean[listMean > 1.0])
+	listStd = np.std(listStd[listMean > 1.0])
 
 	for spectro in spectroList:
 

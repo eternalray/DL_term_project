@@ -242,12 +242,13 @@ class PresidentSing(nn.Module):
 		xR = xR.data.numpy()
 		xT = xT.data.numpy()
 
-		z = z.reshape(28, 67)
+		#z = z.reshape(28, 67)
+		z = z.reshape(86, 201)
 		xR = xR.reshape(256, 601)
 		xT = xT.reshape(256, 601)
 
-		xR = np.concatenate((remain, xR), axis = 0)
-		xT = np.concatenate((remain, xT), axis = 0)
+		xR = np.append(xR, remain, axis = 0)
+		xT = np.append(xT, remain, axis = 0)
 
 		#xR = stft.denormalizeSpectro(xR, mean, std)
 		#xT = stft.denormalizeSpectro(xT, mean, std)
