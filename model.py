@@ -261,14 +261,14 @@ class PresidentSing(nn.Module):
 
 		return z, xR, xT
 
-	def train(self, learningRate = 1e-4, numEpoch = 5, numBatch = 32):
+	def train(self, learningRate = 3e-4, numEpoch = 5, numBatch = 32):
 
 		history = list()
 
-		self.optEncoder = optim.Adam(self.encoder.parameters(), lr = learningRate)
-		self.optDecoderR = optim.Adam(self.decoderR.parameters(), lr = learningRate)
-		self.optDecoderT = optim.Adam(self.decoderT.parameters(), lr = learningRate)
-		self.optDiscrim = optim.Adam(self.discriminator.parameters(), lr = learningRate)
+		self.optEncoder = optim.Adam(self.encoder.parameters(), lr = learningRate, weight_decay = 0.9)
+		self.optDecoderR = optim.Adam(self.decoderR.parameters(), lr = learningRate, weight_decay = 0.9)
+		self.optDecoderT = optim.Adam(self.decoderT.parameters(), lr = learningRate, weight_decay = 0.9)
+		self.optDiscrim = optim.Adam(self.discriminator.parameters(), lr = learningRate, weight_decay = 0.9)
 
 		self.lossReconstruct = nn.MSELoss()
 		self.lossCycle = nn.L1Loss()
