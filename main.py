@@ -50,6 +50,8 @@ def convertFile(model, path, show = False):
 
 		librosa.display.specshow(normalized)
 		plt.show()
+		librosa.display.specshow(normalized[:256,:])
+		plt.show()
 
 		latent, reconst, target = model.convert(normalized)
 
@@ -59,6 +61,9 @@ def convertFile(model, path, show = False):
 		plt.show()
 		librosa.display.specshow(target)
 		plt.show()
+
+		reconst = np.power(1.5, reconst)
+		target = np.power(1.5, target)
 
 		reconstList.append(stft.griffinLim(stft.denormalizeSpectro(reconst, mean, std)))
 		targetList.append(stft.griffinLim(stft.denormalizeSpectro(target, mean, std)))
@@ -109,7 +114,7 @@ def main(path, modelPath, mode):
 		print('Train ended')
 		print('Elapsed time : ', timeit.default_timer() - timeNow)
 
-		util.plotLossHistory(lossHistory, modelPath)
+		#util.plotLossHistory(lossHistory, modelPath)
 
 	elif mode == 'convert':
 
