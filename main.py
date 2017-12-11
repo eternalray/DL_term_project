@@ -65,8 +65,8 @@ def convertFile(model, path):
 		#reconst = np.power(1.5, reconst)
 		#target = np.power(1.5, target)
 
-		reconstList.append(stft.fromDecibel(stft.denormalizeDecibel(reconst, mean, std, maxV)))
-		targetList.append(stft.fromDecibel(stft.denormalizeDecibel(target, mean, std, maxV)))
+		reconstList.append(stft.fromDecibel(reconst * maxV))
+		targetList.append(stft.fromDecibel(target * maxV))
 
 	reconst = stft.concatAudio(reconstList, dtype = 'spectrogram')
 	target = stft.concatAudio(targetList, dtype = 'spectrogram')

@@ -82,13 +82,13 @@ def transformAll(filePath, timeLength = 3):
 
 def toDecibel(spectro):
 	
-	decibel = np.log10((spectro + 1e-13) / 1e-13)
+	decibel = np.log10((spectro + 1e-11) / 1e-11)
 
 	return decibel
 
-def fromDecibel(decibel, reference):
+def fromDecibel(decibel):
 
-	spectro = np.power(10.0, decibel + np.log10(1e-13)) - 1e-13
+	spectro = np.power(10.0, decibel + np.log10(1e-11)) - 1e-11
 
 	return spectro
 
