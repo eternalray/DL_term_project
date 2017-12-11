@@ -256,7 +256,7 @@ class PresidentSing(nn.Module):
 
 		return z, xR, xT
 
-	def train(self, learningRate = 1e-4, numEpoch = 20, numBatch = 32):
+	def train(self, learningRate = 1e-5, numEpoch = 30, numBatch = 32):
 
 		history = list()
 
