@@ -45,7 +45,9 @@ class AudioLoader(torchData.Dataset):
 
 		with open(os.path.join(self.inPath, self.fileList[idx]), 'rb') as fs:
 
-			data, _, _ = stft.normalizeSpectro(pickle.load(fs))
+			#data, _, _ = stft.normalizeSpectro(pickle.load(fs))
+			data, _ = stft.toDecibel(pickle.load(fs))
+			data, _, _ = stft.normalizeDecibel(decibel)
 			data = torch.from_numpy(data[:256,:])
 
 		if self.target in self.fileList[idx]:
@@ -218,8 +220,6 @@ class PresidentSing(nn.Module):
 
 	def convert(self, x):
 
-		#x, mean, std = stft.normalizeSpectro(x)
-
 		remain = x[256:,:]
 		x = x[:256,:]
 
@@ -250,14 +250,8 @@ class PresidentSing(nn.Module):
 		xR = xR.reshape(256, 601)
 		xT = xT.reshape(256, 601)
 
-		xR = xR - np.mean(remain[remain < 1.0])
-		xT = xT - np.mean(remain[remain < 1.0])
-
 		xR = np.append(xR, remain, axis = 0)
 		xT = np.append(xT, remain, axis = 0)
-
-		#xR = stft.denormalizeSpectro(xR, mean, std)
-		#xT = stft.denormalizeSpectro(xT, mean, std)
 
 		return z, xR, xT
 

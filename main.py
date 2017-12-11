@@ -38,15 +38,15 @@ def convert(model, path):
 
 		print('Error : Given path is wrong')
 
-def convertFile(model, path, show = False):
+def convertFile(model, path):
 
 	reconstList = list()
 	targetList = list()
 
 	spectroList = stft.transformAll(path)
-	normalizedList = stft.normalizeSpectroList(spectroList)
+	normalizedList, reference, mean, std = stft.normalizeSpectroList(spectroList)
 
-	for normalized, mean, std in normalizedList:
+	for normalized in normalizedList:
 
 		#librosa.display.specshow(normalized)
 		#plt.show()
@@ -62,14 +62,14 @@ def convertFile(model, path, show = False):
 		#librosa.display.specshow(target)
 		#plt.show()
 
-		reconst = np.power(1.5, reconst)
-		target = np.power(1.5, target)
+		#reconst = np.power(1.5, reconst)
+		#target = np.power(1.5, target)
 
-		reconstList.append(stft.griffinLim(stft.denormalizeSpectro(reconst, mean, std)))
-		targetList.append(stft.griffinLim(stft.denormalizeSpectro(target, mean, std)))
+		reconstList.append(fromDecibel(denormalizeDecibel(reconst, mean, std), reference))
+		targetList.append(fromDecibel(denormalizeDecibel(target, mean, std), reference))
 
-	reconst = stft.concatAudio(reconstList)
-	target = stft.concatAudio(targetList)
+	reconst = stft.concatAudio(reconstList, dtype = 'spectrogram')
+	target = stft.concatAudio(targetList, dtype = 'spectrogram')
 	
 	fileReconst = 'converted_reconstruct_' + os.path.basename(path)
 	fileTarget = 'converted_target_' + os.path.basename(path)
@@ -77,14 +77,6 @@ def convertFile(model, path, show = False):
 	librosa.output.write_wav(os.path.join(os.path.dirname(path), fileTarget), target, sr = 51200)
 	print('Output : ', fileReconst)
 	print('Output : ', fileTarget)
-
-	if show:
-
-		original, rate = librosa.load(path, mono = True, sr = 51200)
-		
-		stft.showSpectrogram(original)
-		stft.showSpectrogram(reconst)
-		stft.showSpectrogram(target)
 
 def main(path, modelPath, mode):
 

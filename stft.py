@@ -62,7 +62,7 @@ def transformAll(filePath, timeLength = 3):
 	selected = audio[start : end]
 
 	# use 100% of audio
-	#selected = audio
+	selected = audio
 
 	# STFT for divided audio
 	for window in util.divideList(selected, windowSize):
@@ -80,70 +80,78 @@ def transformAll(filePath, timeLength = 3):
 		
 	return result
 
-def normalizeSpectro(spectro, mean = None, std = None):
+def toDecibel(spectro, reference = None):
+
+	if reference == None:
+
+		reference = np.min(spectro)
+	
+	decibel = np.log10(spectro / reference)
+
+	return decibel, reference
+
+def fromDecibel(decibel, reference):
+
+	spectro = np.power(10.0, decibel + np.log10(reference))
+
+	return spectro
+
+def normalizeDecibel(decibel, mean = None, std = None):
 
 	if mean == None or std == None:
 
-		np.seterr(all = 'raise')
+		mean = np.mean(decibel)
+		std = np.std(decibel)
 
-		try:
+	normalized = (decibel - mean) / (std + 1e-13)
 
-			mean = np.mean(spectro[spectro > 1.0])
-			std = np.std(spectro[spectro > 1.0])
+	return normalized
 
-		except:
+def denormalizeDecibel(decibel, mean, std):
 
-			mean = 1e-13
-			std = 1e-13
-			normalized = spectro
+	denormalized = decibel * (std + 1e-13) + mean
 
-		else:
-
-			normalized = (spectro - mean) / (std + 1e-13)
-
-	else:
-
-		normalized = (spectro - mean) / (std + 1e-13)
-
-	return normalized, mean, std
+	return denormalized
 
 def normalizeSpectroList(spectroList):
 
+	decibelList = list()
 	normalizedList = list()
-	
-	listMean = np.concatenate(spectroList) 
-	listStd = np.concatenate(spectroList)
-	listMean = np.mean(listMean[listMean > 1.0])
-	listStd = np.std(listStd[listMean > 1.0])
+
+	reference = np.min(np.concatenate(spectroList))
 
 	for spectro in spectroList:
 
-		normalized, mean, std = normalizeSpectro(spectro, listMean, listStd)
+		decibelList.append(toDecibel(spectro, reference))
 
-		normalizedList.append((normalized, mean, std))
+	mean = np.mean(np.concatenate(decibelList))
+	std = np.std(np.concatenate(decibelList))
 
-	return normalizedList
+	for decibel in decibelList:
 
-def denormalizeSpectro(spectro, mean, std):
+		normalizedList.append(normalizeDecibel(decibel, mean, std))
 
-	return (spectro * (std + 1e-13)) + mean
+	return normalizedList, reference, mean, std
 
-def denormalizeSpectroList(normalizedList):
+def denormalizeSpectroList(normalizedList, reference, mean, std)
 
-	denormalizedList = list()
+	decibelList = list()
+	spectroList = list()
 
-	for normalized, mean, std in normalizedList:
+	for normalized in normalizedList:
 
-		denormalized = normalizeSpectro(normalized, mean, std)
-		normalizedList.append(denormalized)
+		decibelList.append(denormalizeDecibel(normalized, mean, std))
 
-	return denormalizedList
+	for decibel in decibelList:
+
+		spectroList.append(fromDecibel(decibel, reference))
+
+	return spectroList
 
 def griffinLim(spectro, iterN = 50):
 
 	# reference : https://github.com/andabi/deep-voice-conversion/blob/master/tools/audio_utils.py
 
-	#spectro = np.power(10.0, spectro - 1e-13)
 	phase = np.pi * np.random.rand(*spectro.shape)
 	spec = spectro * np.exp(1.0j * phase)
 
