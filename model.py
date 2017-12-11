@@ -47,7 +47,8 @@ class AudioLoader(torchData.Dataset):
 
 			#data, _, _ = stft.normalizeSpectro(pickle.load(fs))
 			data = stft.toDecibel(pickle.load(fs))
-			data = stft.normalizeDecibel(data)
+			data = data / np.max(data)
+			#data = stft.normalizeDecibel(data)
 			data = torch.from_numpy(data[:256,:])
 
 		if self.target in self.fileList[idx]:

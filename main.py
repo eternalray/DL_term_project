@@ -44,7 +44,7 @@ def convertFile(model, path):
 	targetList = list()
 
 	spectroList = stft.transformAll(path)
-	normalizedList, mean, std = stft.normalizeSpectroList(spectroList)
+	normalizedList, mean, std, maxV = stft.normalizeSpectroList(spectroList)
 
 	for normalized in normalizedList:
 
@@ -65,8 +65,8 @@ def convertFile(model, path):
 		#reconst = np.power(1.5, reconst)
 		#target = np.power(1.5, target)
 
-		reconstList.append(fromDecibel(denormalizeDecibel(reconst, mean, std)))
-		targetList.append(fromDecibel(denormalizeDecibel(target, mean, std)))
+		reconstList.append(stft.fromDecibel(stft.denormalizeDecibel(reconst, mean, std, maxV)))
+		targetList.append(stft.fromDecibel(stft.denormalizeDecibel(target, mean, std, maxV)))
 
 	reconst = stft.concatAudio(reconstList, dtype = 'spectrogram')
 	target = stft.concatAudio(targetList, dtype = 'spectrogram')

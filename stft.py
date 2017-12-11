@@ -62,7 +62,7 @@ def transformAll(filePath, timeLength = 3):
 	selected = audio[start : end]
 
 	# use 100% of audio
-	selected = audio
+	#selected = audio
 
 	# STFT for divided audio
 	for window in util.divideList(selected, windowSize):
@@ -118,23 +118,27 @@ def normalizeSpectroList(spectroList):
 
 		decibelList.append(toDecibel(spectro))
 
-	mean = np.mean(np.concatenate(decibelList))
-	std = np.std(np.concatenate(decibelList))
+	#mean = np.mean(np.concatenate(decibelList))
+	#std = np.std(np.concatenate(decibelList))
+
+	maxV = np.max(np.concatenate(decibelList))
 
 	for decibel in decibelList:
 
-		normalizedList.append(normalizeDecibel(decibel, mean, std))
+		#normalizedList.append(normalizeDecibel(decibel, mean, std))
+		normalizedList.append(decibel / maxV)
 
-	return normalizedList, mean, std
+	return normalizedList, mean, std, maxV
 
-def denormalizeSpectroList(normalizedList, mean, std):
+def denormalizeSpectroList(normalizedList, mean, std, maxV):
 
 	decibelList = list()
 	spectroList = list()
 
 	for normalized in normalizedList:
 
-		decibelList.append(denormalizeDecibel(normalized, mean, std))
+		#decibelList.append(denormalizeDecibel(normalized, mean, std))
+		decibelList.append(normalized * maxV)
 
 	for decibel in decibelList:
 
