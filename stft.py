@@ -80,6 +80,29 @@ def transformAll(filePath, timeLength = 3):
 		
 	return result
 
+
+
+
+
+
+def temp(spectroList):
+
+	temp = list()
+
+	maxV = np.max(np.concatenate(spectroList))
+
+	for spectro in spectroList:
+
+		temp.append(spectro / maxV)
+
+	return temp, maxV
+
+
+
+
+
+
+
 def toDecibel(spectro):
 	
 	decibel = np.log10((spectro + 1e-11) / 1e-11)
@@ -118,15 +141,14 @@ def normalizeSpectroList(spectroList):
 
 		decibelList.append(toDecibel(spectro))
 
-	#mean = np.mean(np.concatenate(decibelList))
-	#std = np.std(np.concatenate(decibelList))
+	mean = np.mean(np.concatenate(decibelList))
+	std = np.std(np.concatenate(decibelList))
 
 	maxV = np.max(np.concatenate(decibelList))
 
 	for decibel in decibelList:
 
-		#normalizedList.append(normalizeDecibel(decibel, mean, std))
-		normalizedList.append(decibel / maxV)
+		normalizedList.append(normalizeDecibel(decibel, mean, std))
 
 	return normalizedList, mean, std, maxV
 
@@ -137,8 +159,7 @@ def denormalizeSpectroList(normalizedList, mean, std, maxV):
 
 	for normalized in normalizedList:
 
-		#decibelList.append(denormalizeDecibel(normalized, mean, std))
-		decibelList.append(normalized * maxV)
+		decibelList.append(denormalizeDecibel(normalized, mean, std))
 
 	for decibel in decibelList:
 

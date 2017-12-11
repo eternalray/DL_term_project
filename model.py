@@ -46,9 +46,16 @@ class AudioLoader(torchData.Dataset):
 		with open(os.path.join(self.inPath, self.fileList[idx]), 'rb') as fs:
 
 			#data, _, _ = stft.normalizeSpectro(pickle.load(fs))
-			data = stft.toDecibel(pickle.load(fs))
+
+
+
+
+			data = pickle.load(fs)
 			data = data / np.max(data)
-			#data = stft.normalizeDecibel(data)
+
+
+
+
 			data = torch.from_numpy(data[:256,:])
 
 		if self.target in self.fileList[idx]:
@@ -256,7 +263,7 @@ class PresidentSing(nn.Module):
 
 		return z, xR, xT
 
-	def train(self, learningRate = 1e-5, numEpoch = 30, numBatch = 32):
+	def train(self, learningRate = 1e-5, numEpoch = 5, numBatch = 32):
 
 		history = list()
 

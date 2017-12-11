@@ -44,7 +44,9 @@ def convertFile(model, path):
 	targetList = list()
 
 	spectroList = stft.transformAll(path)
-	normalizedList, mean, std, maxV = stft.normalizeSpectroList(spectroList)
+	#normalizedList, mean, std, maxV = stft.normalizeSpectroList(spectroList)
+
+	normalizedList, maxV = stft.temp(spectroList)
 
 	for normalized in normalizedList:
 
@@ -62,11 +64,11 @@ def convertFile(model, path):
 		#librosa.display.specshow(target)
 		#plt.show()
 
-		#reconst = np.power(1.5, reconst)
-		#target = np.power(1.5, target)
+		reconst = np.power(1.5, reconst)
+		target = np.power(1.5, target)
 
-		reconstList.append(stft.fromDecibel(reconst * maxV))
-		targetList.append(stft.fromDecibel(target * maxV))
+		reconstList.append(resconst)
+		targetList.append(target)
 
 	reconst = stft.concatAudio(reconstList, dtype = 'spectrogram')
 	target = stft.concatAudio(targetList, dtype = 'spectrogram')
@@ -80,7 +82,7 @@ def convertFile(model, path):
 
 def main(path, modelPath, mode):
 
-	model = PresidentSing(path, modelPath, 12288)
+	model = PresidentSing(path, modelPath, 4096)
 
 	if mode == 'train':
 
