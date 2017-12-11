@@ -80,19 +80,15 @@ def transformAll(filePath, timeLength = 3):
 		
 	return result
 
-def toDecibel(spectro, reference = None):
-
-	if reference == None:
-
-		reference = np.min(spectro)
+def toDecibel(spectro):
 	
-	decibel = np.log10(spectro / reference)
+	decibel = np.log10((spectro + 1e-13) / 1e-13)
 
-	return decibel, reference
+	return decibel
 
 def fromDecibel(decibel, reference):
 
-	spectro = np.power(10.0, decibel + np.log10(reference))
+	spectro = np.power(10.0, decibel + np.log10(1e-13)) - 1e-13
 
 	return spectro
 
@@ -118,11 +114,9 @@ def normalizeSpectroList(spectroList):
 	decibelList = list()
 	normalizedList = list()
 
-	reference = np.min(np.concatenate(spectroList))
-
 	for spectro in spectroList:
 
-		decibelList.append(toDecibel(spectro, reference))
+		decibelList.append(toDecibel(spectro))
 
 	mean = np.mean(np.concatenate(decibelList))
 	std = np.std(np.concatenate(decibelList))
@@ -131,9 +125,9 @@ def normalizeSpectroList(spectroList):
 
 		normalizedList.append(normalizeDecibel(decibel, mean, std))
 
-	return normalizedList, reference, mean, std
+	return normalizedList, mean, std
 
-def denormalizeSpectroList(normalizedList, reference, mean, std)
+def denormalizeSpectroList(normalizedList, mean, std):
 
 	decibelList = list()
 	spectroList = list()
@@ -144,7 +138,7 @@ def denormalizeSpectroList(normalizedList, reference, mean, std)
 
 	for decibel in decibelList:
 
-		spectroList.append(fromDecibel(decibel, reference))
+		spectroList.append(fromDecibel(decibel))
 
 	return spectroList
 
