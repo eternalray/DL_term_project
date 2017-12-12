@@ -80,90 +80,55 @@ def transformAll(filePath, timeLength = 3):
 		
 	return result
 
+def normalizeSpectrogram(spectro, mean = None, std = None):
 
+	np.seterr(all = 'raise')
 
+	try:
 
+		if mean == None or std == None:
 
+			mean = np.mean(spectro[spectro > 1.0])
+			std = np.mean(spectro[spectro > 1.0])
 
-def temp(spectroList):
+	except:
 
-	temp = list()
+		normalized = spectro * 0.0
+		mean = 0.0
+		std = 0.0
 
-	maxV = np.max(np.concatenate(spectroList))
+	else:
 
-	for spectro in spectroList:
+		normalized = (spectro - mean) / (std + 1e-13)
 
-		temp.append(spectro / maxV)
-
-	return temp, maxV
-
-
-
-
-
-
-
-def toDecibel(spectro):
-	
-	decibel = np.log10((spectro + 1e-11) / 1e-11)
-
-	return decibel
-
-def fromDecibel(decibel):
-
-	spectro = np.power(10.0, decibel + np.log10(1e-11)) - 1e-11
-
-	return spectro
-
-def normalizeDecibel(decibel, mean = None, std = None):
-
-	if mean == None or std == None:
-
-		mean = np.mean(decibel)
-		std = np.std(decibel)
-
-	normalized = (decibel - mean) / (std + 1e-13)
-
-	return normalized
-
-def denormalizeDecibel(decibel, mean, std):
-
-	denormalized = decibel * (std + 1e-13) + mean
-
-	return denormalized
+	return normalized, mean, std
 
 def normalizeSpectroList(spectroList):
 
-	decibelList = list()
 	normalizedList = list()
+
+	concat = np.concatenate(spectroList)
+	mean = np.mean(concat[concat > 1.0])
+	std = np.std(concat[concat > 1.0])
 
 	for spectro in spectroList:
 
-		decibelList.append(toDecibel(spectro))
+		normalized, _, _ = normalizeSpectrogram(spectro)
+		normalizedList.append(normalizeDecibel(spectro, mean, std))
 
-	mean = np.mean(np.concatenate(decibelList))
-	std = np.std(np.concatenate(decibelList))
+	return normalizedList, mean, std
 
-	maxV = np.max(np.concatenate(decibelList))
+def denormalizeSpectrogram(normalized, mean, std):
 
-	for decibel in decibelList:
+	return normalized * (std + 1e-13) + mean
 
-		normalizedList.append(normalizeDecibel(decibel, mean, std))
+def denormalizeSpectroList(normalizedList, mean, std):
 
-	return normalizedList, mean, std, maxV
-
-def denormalizeSpectroList(normalizedList, mean, std, maxV):
-
-	decibelList = list()
 	spectroList = list()
 
 	for normalized in normalizedList:
 
-		decibelList.append(denormalizeDecibel(normalized, mean, std))
-
-	for decibel in decibelList:
-
-		spectroList.append(fromDecibel(decibel))
+		spectroList.append(denormalizeSpectrogram(normalized, mean, std))
 
 	return spectroList
 

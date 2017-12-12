@@ -45,17 +45,7 @@ class AudioLoader(torchData.Dataset):
 
 		with open(os.path.join(self.inPath, self.fileList[idx]), 'rb') as fs:
 
-			#data, _, _ = stft.normalizeSpectro(pickle.load(fs))
-
-
-
-
-			data = pickle.load(fs)
-			data = data / np.max(data)
-
-
-
-
+			data, _, _ = stft.normalizeSpectro(pickle.load(fs))
 			data = torch.from_numpy(data[:256,:])
 
 		if self.target in self.fileList[idx]:
@@ -242,26 +232,30 @@ class PresidentSing(nn.Module):
 		z = self.encoder.forward(x)
 		xR = self.decoderR.forward(z)
 		xT = self.decoderT.forward(z)
+		zT = self.encoder.forward(xT)
 
 		if torch.cuda.is_available():
 
 			z = z.cpu()
 			xR = xR.cpu()
 			xT = xT.cpu()
+			zT = zT.cpu()
 
 		z = z.data.numpy()
 		xR = xR.data.numpy()
 		xT = xT.data.numpy()
+		zT = zT.data.numpy()
 
 		#z = z.reshape(28, 67)
 		z = z.reshape(86, 201)
 		xR = xR.reshape(256, 601)
 		xT = xT.reshape(256, 601)
+		zT = zT.reshape(86, 201)
 
 		xR = np.append(xR, remain, axis = 0)
 		xT = np.append(xT, remain, axis = 0)
 
-		return z, xR, xT
+		return z, xR, xT, zT
 
 	def train(self, learningRate = 1e-5, numEpoch = 5, numBatch = 32):
 
@@ -331,8 +325,9 @@ class PresidentSing(nn.Module):
 
 				loss += torch.sum(torch.abs(z - zT)) / (numBatch * 86.0 * 201.0)
 				#loss += self.lossCycle(z, zT)
-				loss.backward(retain_graph = True)
-				lossHistory.append(loss.data[0])
+				#loss.backward(retain_graph = True)
+				loss.backward()
+				#lossHistory.append(loss.data[0])
 				self.optEncoder.step()
 
 				if idx % 50 == 0:
@@ -340,27 +335,27 @@ class PresidentSing(nn.Module):
 					print('loss - second phase : ', loss.data[0])
 
 				# forward pass 2
-				pX = self.discriminator.forward(x)
-				pT = self.discriminator.forward(xT)
-				one = Variable(torch.Tensor([1.0]), requires_grad = False).cuda(1).expand(pX.size())
+				#pX = self.discriminator.forward(x)
+				#pT = self.discriminator.forward(xT)
+				#one = Variable(torch.Tensor([1.0]), requires_grad = False).cuda(1).expand(pX.size())
 
 				# index 0 : Real / Fake
 				# index 1 : Target / Otherwise
 				# y == 1 if Target
 				# y == 0 if Otherwise
 
-				loss -= torch.sum(torch.log(pX), 0)[0] / (numBatch * 3.0)
-				loss -= torch.sum(y * torch.log(pX) + (one - y) * torch.log(one - pX), 0)[1] / (numBatch * 3.0)
-				loss -= torch.sum(torch.log(pT), 0)[0] / (numBatch * 3.0)
+				#loss -= torch.sum(torch.log(pX), 0)[0] / (numBatch * 3.0)
+				#loss -= torch.sum(y * torch.log(pX) + (one - y) * torch.log(one - pX), 0)[1] / (numBatch * 3.0)
+				#loss -= torch.sum(torch.log(pT), 0)[0] / (numBatch * 3.0)
 				#loss -= torch.sum(torch.log(pT), 0)[1] / numBatch					# it can be a problem
 				#loss += self.lossGAN(pX[0], 1)
 				#loss += self.lossGAN(pX[1], y)
 				#loss += self.lossGAN(pT[0], 0)
 				#loss += self.lossGAN(pT[1], 1)										# it can be a problem
-				loss.backward()
-				lossHistory.append(loss.data[0])
+				#loss.backward()
+				#lossHistory.append(loss.data[0])
 				self.optDecoderT.step()
-				self.optDiscrim.step()
+				#self.optDiscrim.step()
 
 				if idx % 50 == 0:
 

@@ -44,9 +44,7 @@ def convertFile(model, path):
 	targetList = list()
 
 	spectroList = stft.transformAll(path)
-	#normalizedList, mean, std, maxV = stft.normalizeSpectroList(spectroList)
-
-	normalizedList, maxV = stft.temp(spectroList)
+	normalizedList, mean, std = stft.normalizeSpectroList(spectroList)
 
 	for normalized in normalizedList:
 
@@ -55,17 +53,25 @@ def convertFile(model, path):
 		#librosa.display.specshow(normalized[:256,:])
 		#plt.show()
 
-		latent, reconst, target = model.convert(normalized)
+		z, xR, xT, zT = model.convert(normalized)
 
-		#librosa.display.specshow(latent)
+		#librosa.display.specshow(z)
 		#plt.show()
-		#librosa.display.specshow(reconst)
+		#librosa.display.specshow(xE)
 		#plt.show()
-		#librosa.display.specshow(target)
+		#librosa.display.specshow(xT)
+		#plt.show()
+		#librosa.display.specshow(zT)
 		#plt.show()
 
-		reconst = np.power(1.5, reconst)
-		target = np.power(1.5, target)
+		xR = denormalizeSpectrogram(xR, mean, std)
+		xT = denormalizeSpectrogram(xT, mean, std)
+
+		xR[:256,:] = xR[:256,:] + np.abs(np.min(xR[:256,:]) - np.min(xR[256:,:]))
+		xT[:256,:] = xT[:256,:] + np.abs(np.min(xT[:256,:]) - np.min(xT[256:,:]))
+
+		reconst = np.power(1.5, xR)
+		target = np.power(1.5, xT)
 
 		reconstList.append(resconst)
 		targetList.append(target)
