@@ -323,7 +323,7 @@ class PresidentSing(nn.Module):
 
 					print('loss - first phase : ', loss.data[0])
 
-				loss += torch.sum(torch.abs(z - zT)) / (numBatch * 86.0 * 201.0)
+				loss = torch.sum(torch.abs(z - zT)) / (numBatch * 86.0 * 201.0)
 				#loss += self.lossCycle(z, zT)
 				loss.backward(retain_graph = True)
 				lossHistory.append(loss.data[0])
@@ -343,7 +343,7 @@ class PresidentSing(nn.Module):
 				# y == 1 if Target
 				# y == 0 if Otherwise
 
-				loss -= torch.sum(torch.log(pX), 0)[0] / (numBatch * 3.0)
+				loss = torch.sum(torch.log(pX), 0)[0] / (numBatch * 3.0)
 				loss -= torch.sum(y * torch.log(pX) + (one - y) * torch.log(one - pX), 0)[1] / (numBatch * 3.0)
 				loss -= torch.sum(torch.log(pT), 0)[0] / (numBatch * 3.0)
 				#loss -= torch.sum(torch.log(pT), 0)[1] / numBatch					# it can be a problem
