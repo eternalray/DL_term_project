@@ -132,27 +132,26 @@ class Discriminator(nn.Module):
 
 		self.model = nn.Sequential(
 
-			nn.Conv2d(1, 8, 3, stride = 1, padding = 1),						# (256, 601, 8)
-			nn.BatchNorm2d(8),
+			nn.Conv2d(1, 96, 11, stride = 4, padding = 0),						# (62, 148, 96)
+			nn.BatchNorm2d(96),
 			nn.ReLU(inplace = True),
-			nn.Conv2d(8, 16, 5, stride = 3, padding = 2),						# (86, 201, 16)
-			nn.BatchNorm2d(16),
+			nn.MaxPool2d(2),													# (31, 74, 96)
+			nn.Conv2d(96, 256, 5, stride = 1, padding = 2),						# (31, 74, 256)
+			nn.BatchNorm2d(256),
 			nn.ReLU(inplace = True),
-			nn.Conv2d(16, 32, 5, stride = 3, padding = (0, 1)),					# (28, 67, 32)
+			nn.MaxPool2d(2),													# (15, 37, 256)
+			nn.Conv2d(256, 384, 3, stride = 1, padding = 1),					# (15, 37, 384)
 			nn.BatchNorm2d(32),
 			nn.ReLU(inplace = True),
-			nn.Conv2d(32, 64, 5, stride = 3, padding = 2),						# (10, 23, 64)
-			nn.BatchNorm2d(64),
+			nn.MaxPool2d(2),													# (7, 18, 384)
+			nn.Conv2d(384, 256, 3, stride = 1, padding = 1),					# (7, 18, 256)
+			nn.BatchNorm2d(256),
 			nn.ReLU(inplace = True),
-			nn.Conv2d(64, 16, 1, stride = 1, padding = 0),						# (10, 23, 16)
-			nn.BatchNorm2d(16),
+			nn.MaxPool2d(2),													# (3, 9, 256)
+			Flatten(),															# (3 * 9 * 256)														
+			nn.Linear(3 * 9 * 256, 4096, bias = True),							# (4096)
 			nn.ReLU(inplace = True),
-			Flatten(),															# (10 * 23 * 16)														
-			nn.Linear(10 * 23 * 16, 1024, bias = True),							# (1024)
-			nn.ReLU(inplace = True),
-			nn.Linear(1024, 512, bias = True),									# (512)
-			nn.ReLU(inplace = True),
-			nn.Linear(512, 2, bias = True),										# (2)
+			nn.Linear(4096, 2, bias = True),									# (2)
 			nn.Sigmoid()
 		)			
 
@@ -326,7 +325,7 @@ class PresidentSing(nn.Module):
 
 				loss = torch.sum(torch.abs(z - zT)) / (numBatch * 86.0 * 201.0)
 				#loss += self.lossCycle(z, zT)
-				loss.backward(retain_graph = True)
+				loss.backward(retain_graph = False)
 				lossHistory.append(loss.data[0])
 				self.optEncoder.step()
 
@@ -344,9 +343,9 @@ class PresidentSing(nn.Module):
 				# y == 1 if Target
 				# y == 0 if Otherwise
 
-				loss = torch.sum(torch.log(pX), 0)[0] / (numBatch * 3.0)
+				loss = -torch.sum(torch.log(pX), 0)[0] / (numBatch * 3.0)
 				loss -= torch.sum(y * torch.log(pX) + (one - y) * torch.log(one - pX), 0)[1] / (numBatch * 3.0)
-				loss -= torch.sum(torch.log(pT), 0)[0] / (numBatch * 3.0)
+				#loss -= torch.sum(torch.log(pT), 0)[0] / (numBatch * 3.0)
 				#loss -= torch.sum(torch.log(pT), 0)[1] / numBatch					# it can be a problem
 				#loss += self.lossGAN(pX[0], 1)
 				#loss += self.lossGAN(pX[1], y)

@@ -99,7 +99,7 @@ def normalizeSpectrogram(spectro, mean = None, std = None):
 
 	else:
 
-		normalized = (spectro - mean) / (std + 1e-13)
+		normalized = (spectro - mean) / (np.sqrt(2.0) * std + 1e-13)
 
 	return normalized, mean, std
 
@@ -120,7 +120,7 @@ def normalizeSpectroList(spectroList):
 
 def denormalizeSpectrogram(normalized, mean, std):
 
-	return normalized * (std + 1e-13) + mean
+	return normalized * (np.sqrt(2.0) * std + 1e-13) + mean
 
 def denormalizeSpectroList(normalizedList, mean, std):
 
