@@ -1,4 +1,5 @@
 import os
+import gc
 import sys
 import time
 import pickle
@@ -252,12 +253,12 @@ class PresidentSing(nn.Module):
 		xT = xT.reshape(256, 601)
 		zT = zT.reshape(86, 201)
 
-		xR = np.append(xR, remain, axis = 0)
-		xT = np.append(xT, remain, axis = 0)
+		xR = np.concatenate((xR, remain), axis = 0)
+		xT = np.concatenate((xT, remain), axis = 0)
 
 		return z, xR, xT, zT
 
-	def train(self, learningRate = 1e-5, numEpoch = 5, numBatch = 32):
+	def train(self, learningRate = 1e-4, numEpoch = 5, numBatch = 32):
 
 		history = list()
 
@@ -362,6 +363,8 @@ class PresidentSing(nn.Module):
 					print('')
 
 				history.append((epoch, idx, lossHistory))
+				
+				gc.collect()
 
 			print('Epoch ', str(epoch), ' finished')
 			print('Elapsed time : ', str(timeit.default_timer() - timeNow))
@@ -384,10 +387,17 @@ class PresidentSing(nn.Module):
 			
 			try:
 
-				torch.save(self.encoder, os.path.join(outPath, timeText + prefix + 'encoder.model'))
-				torch.save(self.decoderT, os.path.join(outPath, timeText + prefix + 'decoder_target.model'))
-				torch.save(self.decoderR, os.path.join(outPath, timeText + prefix + 'encoder_recover.model'))
-				torch.save(self.discriminator, os.path.join(outPath, timeText + prefix + 'discriminator.model'))
+				torch.save(self.encoder.cpu(), os.path.join(outPath, timeText + prefix + 'encoder.model'))
+				torch.save(self.decoderT.cpu(), os.path.join(outPath, timeText + prefix + 'decoder_target.model'))
+				torch.save(self.decoderR.cpu(), os.path.join(outPath, timeText + prefix + 'encoder_recover.model'))
+				torch.save(self.discriminator.cpu(), os.path.join(outPath, timeText + prefix + 'discriminator.model'))
+
+				if torch.cuda.is_available():
+
+					self.encoder.cuda(1)
+					self.decoderT.cuda(1)
+					self.decoderR.cuda(1)
+					self.discriminator.cuda(1)
 
 			except:
 
@@ -440,6 +450,13 @@ class PresidentSing(nn.Module):
 				self.decoderT = torch.load(os.path.join(inPath, timeText + prefix + 'decoder_target.model'))
 				self.decoderR = torch.load(os.path.join(inPath, timeText + prefix + 'encoder_recover.model'))
 				self.discriminator = torch.load(os.path.join(inPath, timeText + prefix + 'discriminator.model'))
+
+				if torch.cuda.is_available():
+
+					self.encoder.cuda(1)
+					self.decoderT.cuda(1)
+					self.decoderR.cuda(1)
+					self.discriminator.cuda(1)
 
 			except:
 

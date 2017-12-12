@@ -113,8 +113,8 @@ def normalizeSpectroList(spectroList):
 
 	for spectro in spectroList:
 
-		normalized, _, _ = normalizeSpectrogram(spectro)
-		normalizedList.append(normalizeDecibel(spectro, mean, std))
+		normalized, _, _ = normalizeSpectrogram(spectro, mean, std)
+		normalizedList.append(normalized)
 
 	return normalizedList, mean, std
 

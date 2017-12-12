@@ -57,23 +57,28 @@ def convertFile(model, path):
 
 		#librosa.display.specshow(z)
 		#plt.show()
-		#librosa.display.specshow(xE)
+		#librosa.display.specshow(xR)
 		#plt.show()
 		#librosa.display.specshow(xT)
 		#plt.show()
 		#librosa.display.specshow(zT)
 		#plt.show()
 
-		xR = denormalizeSpectrogram(xR, mean, std)
-		xT = denormalizeSpectrogram(xT, mean, std)
+		xR = stft.denormalizeSpectrogram(xR, mean, std)
+		xT = stft.denormalizeSpectrogram(xT, mean, std)
 
-		xR[:256,:] = xR[:256,:] + np.abs(np.min(xR[:256,:]) - np.min(xR[256:,:]))
-		xT[:256,:] = xT[:256,:] + np.abs(np.min(xT[:256,:]) - np.min(xT[256:,:]))
+		xR[:256,:] = xR[:256,:] - np.abs(np.min(xR[:256,:]) - np.min(xR[256:,:]))
+		xT[:256,:] = xT[:256,:] - np.abs(np.min(xT[:256,:]) - np.min(xT[256:,:]))
 
-		reconst = np.power(1.5, xR)
-		target = np.power(1.5, xT)
+		#reconst = np.power(1.5, xR)
+		#target = np.power(1.5, xT)
 
-		reconstList.append(resconst)
+		#librosa.display.specshow(xR)
+		#plt.show()
+		#librosa.display.specshow(xT)
+		#plt.show()
+
+		reconstList.append(reconst)
 		targetList.append(target)
 
 	reconst = stft.concatAudio(reconstList, dtype = 'spectrogram')
