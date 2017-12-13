@@ -141,7 +141,7 @@ class Discriminator(nn.Module):
 			nn.ReLU(inplace = True),
 			nn.MaxPool2d(2),													# (15, 37, 256)
 			nn.Conv2d(256, 384, 3, stride = 1, padding = 1),					# (15, 37, 384)
-			nn.BatchNorm2d(394),
+			nn.BatchNorm2d(384),
 			nn.ReLU(inplace = True),
 			nn.MaxPool2d(2),													# (7, 18, 384)
 			nn.Conv2d(384, 256, 3, stride = 1, padding = 1),					# (7, 18, 256)
@@ -259,7 +259,7 @@ class PresidentSing(nn.Module):
 
 	def testDiscriminator(self, x):
 
-		x = Variable(torch.from_numpy(x = x[:256,:]), requires_grad = False)
+		x = Variable(torch.from_numpy(x[:256,:]), requires_grad = False)
 		x = x.contiguous()
 		x = x.view(1, 1, 256, 601)
 
@@ -346,7 +346,7 @@ class PresidentSing(nn.Module):
 
 				loss = torch.sum(torch.abs(z - zT)) / (numBatch * 86.0 * 201.0)
 				#loss += self.lossCycle(z, zT)
-				loss.backward(retain_graph = False)
+				loss.backward(retain_graph = True)
 				lossHistory.append(loss.data[0])
 				self.optEncoder.step()
 
@@ -366,7 +366,7 @@ class PresidentSing(nn.Module):
 
 				#loss = -torch.sum(torch.log(pX), 0)[0] / (numBatch * 3.0)
 				loss = -torch.sum(y * torch.log(pX) + (one - y) * torch.log(one - pX), 0)[1] / (numBatch * 3.0)
-				#loss -= torch.sum(torch.log(pT), 0)[0] / (numBatch * 3.0)
+				#loss -= torch.sum(torch.log(one - pT), 0)[0] / (numBatch * 3.0)
 				#loss -= torch.sum(torch.log(pT), 0)[1] / numBatch					# it can be a problem
 				#loss += self.lossGAN(pX[0], 1)
 				#loss += self.lossGAN(pX[1], y)

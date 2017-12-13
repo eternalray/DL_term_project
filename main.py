@@ -1,6 +1,7 @@
 import os
 import sys
 import timeit
+import pickle
 import argparse
 
 import stft
@@ -94,6 +95,8 @@ def convertFile(model, path):
 def testDiscriminator(model, path, target):
 
 	result = list()
+	count = list()
+	ground = list()
 
 	if os.path.isdir(path):
 
@@ -108,15 +111,38 @@ def testDiscriminator(model, path, target):
 						spectro = pickle.load(fs)
 						pred = model.testDiscriminator(spectro)
 
-						print(pred)
-						print(pred[0])
-						print(pred[1])
+						if pred[1] > 0.5:
+
+							count.append(1.0)
+
+							if target in os.path.splitext(f)[0]:
+
+								result.append(1.0)
+								ground.append(1.0)
+
+							else:
+
+								result.append(0.0)
+
+						else:
+
+							if not target in os.path.splitext(f)[0]:
+
+								result.append(1.0)
+
+							else:
+
+								result.append(0.0)
+								ground.append(1.0)
 
 	else:
 
 		print('Error : Given path is wrong')
 
-	return result
+	acc = np.sum(result) / len(result)
+	truth = np.sum(ground)
+
+	return acc, np.sum(count), truth, len(files)
 
 def main(path, modelPath, mode):
 
@@ -167,10 +193,10 @@ def main(path, modelPath, mode):
 		print('Test started')
 		timeNow = timeit.default_timer()
 
-		acc = testDiscriminator(model, path, 'trump')
+		result = testDiscriminator(model, path, 'trump')
 
 		print('Test ended')
-		print(acc)
+		print(result)
 		print('Elapsed time : ', timeit.default_timer() - timeNow)
 
 	else:
