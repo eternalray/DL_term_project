@@ -136,6 +136,8 @@ def griffinLim(spectro, iterN = 50):
 
 	# reference : https://github.com/andabi/deep-voice-conversion/blob/master/tools/audio_utils.py
 
+	np.seterr(all = 'ignore')
+
 	phase = np.pi * np.random.rand(*spectro.shape)
 	spec = spectro * np.exp(1.0j * phase)
 

@@ -141,7 +141,7 @@ class Discriminator(nn.Module):
 			nn.ReLU(inplace = True),
 			nn.MaxPool2d(2),													# (15, 37, 256)
 			nn.Conv2d(256, 384, 3, stride = 1, padding = 1),					# (15, 37, 384)
-			nn.BatchNorm2d(32),
+			nn.BatchNorm2d(394),
 			nn.ReLU(inplace = True),
 			nn.MaxPool2d(2),													# (7, 18, 384)
 			nn.Conv2d(384, 256, 3, stride = 1, padding = 1),					# (7, 18, 256)
@@ -343,8 +343,8 @@ class PresidentSing(nn.Module):
 				# y == 1 if Target
 				# y == 0 if Otherwise
 
-				loss = -torch.sum(torch.log(pX), 0)[0] / (numBatch * 3.0)
-				loss -= torch.sum(y * torch.log(pX) + (one - y) * torch.log(one - pX), 0)[1] / (numBatch * 3.0)
+				#loss = -torch.sum(torch.log(pX), 0)[0] / (numBatch * 3.0)
+				loss = -torch.sum(y * torch.log(pX) + (one - y) * torch.log(one - pX), 0)[1] / (numBatch * 3.0)
 				#loss -= torch.sum(torch.log(pT), 0)[0] / (numBatch * 3.0)
 				#loss -= torch.sum(torch.log(pT), 0)[1] / numBatch					# it can be a problem
 				#loss += self.lossGAN(pX[0], 1)

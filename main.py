@@ -64,8 +64,8 @@ def convertFile(model, path):
 		#librosa.display.specshow(zT)
 		#plt.show()
 
-		xR[:256,:] = xR[:256,:] - np.abs(np.abs(np.min(xR[:256,:])) - np.abs(np.min(xR[256:,:])))
-		xT[:256,:] = xT[:256,:] - np.abs(np.abs(np.min(xT[:256,:])) - np.abs(np.min(xT[256:,:])))
+		#xR[:256,:] = xR[:256,:] - np.abs(np.abs(np.min(xR[:256,:])) - np.abs(np.min(xR[256:,:])))
+		#xT[:256,:] = xT[:256,:] - np.abs(np.abs(np.min(xT[:256,:])) - np.abs(np.min(xT[256:,:])))
 
 		reconst = stft.denormalizeSpectrogram(xR, mean, std)
 		target = stft.denormalizeSpectrogram(xT, mean, std)
