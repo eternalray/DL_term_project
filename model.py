@@ -257,6 +257,27 @@ class PresidentSing(nn.Module):
 
 		return z, xR, xT, zT
 
+	def testDiscriminator(self, x):
+
+		x = Variable(torch.from_numpy(x = x[:256,:]), requires_grad = False)
+		x = x.contiguous()
+		x = x.view(1, 1, 256, 601)
+
+		if torch.cuda.is_available():
+
+			x = x.cuda(1)
+
+		pred = self.discriminator.forward(x)
+
+		if torch.cuda.is_available():
+
+			pred = pred.cpu()
+
+		pred = pred.data.numpy()
+		pred = pred.reshape(2, 1)
+
+		return pred
+
 	def train(self, learningRate = 1e-4, numEpoch = 5, numBatch = 32):
 
 		history = list()

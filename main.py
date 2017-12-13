@@ -91,6 +91,33 @@ def convertFile(model, path):
 	print('Output : ', fileReconst)
 	print('Output : ', fileTarget)
 
+def testDiscriminator(model, path, target):
+
+	result = list()
+
+	if os.path.isdir(path):
+
+		for ps, dirs, files in os.walk(path):
+
+			for f in files:
+
+				if os.path.splitext(f)[-1] == '.pickle':
+
+					with open(os.path.join(ps, f), 'rb') as fs:
+
+						spectro = pickle.load(fs)
+						pred = model.testDiscriminator(spectro)
+
+						print(pred)
+						print(pred[0])
+						print(pred[1])
+
+	else:
+
+		print('Error : Given path is wrong')
+
+	return result
+
 def main(path, modelPath, mode):
 
 	model = PresidentSing(path, modelPath, 4096)
@@ -133,9 +160,22 @@ def main(path, modelPath, mode):
 		print('Convert ended')
 		print('Elapsed time : ', timeit.default_timer() - timeNow)
 
+	elif mode == 'discrim':
+
+		model.load(modelPath, prefix = 'final')
+
+		print('Test started')
+		timeNow = timeit.default_timer()
+
+		acc = testDiscriminator(model, path, 'trump')
+
+		print('Test ended')
+		print(acc)
+		print('Elapsed time : ', timeit.default_timer() - timeNow)
+
 	else:
 
-		print('Error : Mode can be "train" or "convert"')
+		print('Error : Mode can be "train" or "convert" or "discrim"')
 
 if __name__ == '__main__':
 
