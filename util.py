@@ -1,6 +1,7 @@
 import os
 import sys
 import time
+import pickle
 import matplotlib.pyplot as plt
 
 def getTime():
@@ -48,3 +49,11 @@ def plotLossHistory(lossHistory, outPath):
 	fig.savefig(os.path.join(os.path.dirname(outPath), getTime() + 'train_loss.png'))
 
 	return fig, ax
+
+def saveLossHistory(lossHistory, outPath):
+
+	fileName = getTime() + 'loss.pickle'
+
+	with open(os.path.join(os.path.dirname(outPath), fileName), 'wb') as fs:
+
+		pickle.dump(lossHistory, fs)

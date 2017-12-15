@@ -146,7 +146,7 @@ def testDiscriminator(model, path, target):
 
 def main(path, modelPath, mode):
 
-	model = PresidentSing(path, modelPath, 4096)
+	model = PresidentSing(path, modelPath, 12288)
 
 	if mode == 'train':
 
@@ -159,6 +159,7 @@ def main(path, modelPath, mode):
 		print('Elapsed time : ', timeit.default_timer() - timeNow)
 
 		#util.plotLossHistory(lossHistory, modelPath)
+		util.saveLossHistory(lossHistory, modelPath)
 
 	elif mode == 'trainC':
 
