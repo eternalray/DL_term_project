@@ -61,8 +61,8 @@ class AudioLoader(torchData.Dataset):
 
 		if torch.cuda.is_available():
 
-			data = data.cuda(1)
-			label = label.cuda(1)
+			data = data.cuda()
+			label = label.cuda()
 
 		return data, label
 
@@ -181,10 +181,10 @@ class PresidentSing(nn.Module):
 
 		if torch.cuda.is_available():
 
-			self.encoder = Encoder().cuda(1)
-			self.decoderR = Decoder().cuda(1)
-			self.decoderT = Decoder().cuda(1)
-			self.discriminator = Discriminator().cuda(1)
+			self.encoder = Encoder().cuda()
+			self.decoderR = Decoder().cuda()
+			self.decoderT = Decoder().cuda()
+			self.discriminator = Discriminator().cuda()
 
 		else:
 
@@ -227,7 +227,7 @@ class PresidentSing(nn.Module):
 
 		if torch.cuda.is_available():
 
-			x = x.cuda(1)
+			x = x.cuda()
 
 		z = self.encoder.forward(x)
 		xR = self.decoderR.forward(z)
@@ -265,7 +265,7 @@ class PresidentSing(nn.Module):
 
 		if torch.cuda.is_available():
 
-			x = x.cuda(1)
+			x = x.cuda()
 
 		pred = self.discriminator.forward(x)
 
@@ -357,7 +357,7 @@ class PresidentSing(nn.Module):
 				# forward pass 2
 				pX = self.discriminator.forward(x)
 				pT = self.discriminator.forward(xT)
-				one = Variable(torch.Tensor([1.0]), requires_grad = False).cuda(1).expand(pX.size())
+				one = Variable(torch.Tensor([1.0]), requires_grad = False).cuda().expand(pX.size())
 
 				# index 0 : Real / Fake
 				# index 1 : Target / Otherwise
@@ -434,10 +434,10 @@ class PresidentSing(nn.Module):
 
 				if torch.cuda.is_available():
 
-					self.encoder.cuda(1)
-					self.decoderT.cuda(1)
-					self.decoderR.cuda(1)
-					self.discriminator.cuda(1)
+					self.encoder.cuda()
+					self.decoderT.cuda()
+					self.decoderR.cuda()
+					self.discriminator.cuda()
 
 			except:
 
@@ -493,10 +493,10 @@ class PresidentSing(nn.Module):
 
 				if torch.cuda.is_available():
 
-					self.encoder.cuda(1)
-					self.decoderT.cuda(1)
-					self.decoderR.cuda(1)
-					self.discriminator.cuda(1)
+					self.encoder.cuda()
+					self.decoderT.cuda()
+					self.decoderR.cuda()
+					self.discriminator.cuda()
 
 			except:
 
