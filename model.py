@@ -369,7 +369,6 @@ class PresidentSing(nn.Module):
 				loss.backward(retain_graph = True)
 				lossHistory.append(loss.data[0])
 				self.optDecoderT.step()
-				self.optEncoder.step()
 				self.optDiscrim.step()
 				lossHistory.append(loss.data[0])
 
@@ -379,15 +378,16 @@ class PresidentSing(nn.Module):
 					print('')
 
 				self.optDecoderT.zero_grad()
-				loss -= torch.sum(torch.log(one - pT), 0)[0] / (numBatch * 3.0)		# minimize
+				loss -= torch.sum(torch.log(pT), 0)[0] / (numBatch * 3.0)		# minimize
 				loss.backward(retain_graph = True)
 				self.optDecoderT.step()
 				lossHistory.append(loss.data[0])
 
 				self.optDiscrim.zero_grad()
-				loss = torch.sum(torch.log(one - pT), 0)[0] / (numBatch * 3.0)		# maximize
+				loss = -torch.sum(torch.log(one - pT), 0)[0] / (numBatch * 3.0)		# maximize
 				loss.backward(retain_graph = False)
 				self.optDiscrim.step()
+				self.optEncoder.step()
 
 				if idx % 50 == 0:
 
